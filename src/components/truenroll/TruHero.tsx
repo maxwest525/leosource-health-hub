@@ -1,26 +1,29 @@
 import { Link } from "react-router-dom";
+import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
   MessageCircle,
-  BadgeCheck,
-  ShieldPlus,
-  HeartPulse,
-  Stethoscope,
-  Pill,
-  PiggyBank,
+  ShieldCheck,
+  Compass,
+  BookHeart,
+  Users,
   Target,
+  Crosshair,
 } from "lucide-react";
 import { TruChatPanel } from "./TruChatPanel";
 import heroPath from "@/assets/truenroll/hero-path.jpg";
 
-const CHIPS = [
-  { icon: ShieldPlus, tint: "text-[#1877D2]", label: "ACA" },
-  { icon: HeartPulse, tint: "text-[#22B573]", label: "Medicare" },
-  { icon: Stethoscope, tint: "text-[#1877D2]", label: "Doctors" },
-  { icon: Pill, tint: "text-[#EF4B3C]", label: "Prescriptions" },
-  { icon: PiggyBank, tint: "text-[#17A2A2]", label: "Subsidies" },
-  { icon: Target, tint: "text-[#7C5CD6]", label: "Plan Match" },
+type Chip = { icon?: LucideIcon; glyph?: string; tint: string; label: string };
+
+const CHIPS: Chip[] = [
+  { icon: Compass, tint: "text-[#1877D2]", label: "ACA" },
+  { icon: BookHeart, tint: "text-[#22B573]", label: "Medicare" },
+  { icon: Users, tint: "text-[#7C5CD6]", label: "Doctors" },
+  { glyph: "Rx", tint: "text-[#EF4B3C]", label: "Prescriptions" },
+  { icon: Target, tint: "text-[#17A25E]", label: "Subsidies" },
+  { icon: Crosshair, tint: "text-[#5B6BE0]", label: "Plan Match" },
 ];
+
 
 export const TruHero = () => (
   <section className="relative overflow-hidden bg-white">
