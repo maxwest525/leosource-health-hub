@@ -16,7 +16,9 @@ const HomeV2 = () => {
       <main>
         <TruHero />
         <TruCenters />
+        <TruTrudyStrip />
         <TruSpotlights />
+
       </main>
       <TruFooter />
     </div>
