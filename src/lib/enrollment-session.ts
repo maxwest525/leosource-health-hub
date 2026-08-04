@@ -205,6 +205,11 @@ const mapRow = (row: SessionRow): EnrollmentSession => ({
   healthsherpaEnrollmentUrl: (row.healthsherpa_enrollment_url as string) ?? null,
   policyStatus: toPolicyStatus(row.policy_status),
   correctionNote: (row.correction_note as string) ?? null,
+  fieldCorrections: asArray<string>(row.field_corrections),
+  handoffStatus: (row.handoff_status as string) ?? null,
+  healthsherpaShoppingUrl: (row.healthsherpa_shopping_url as string) ?? null,
+  healthsherpaClientApplyUrl: (row.healthsherpa_client_apply_url as string) ?? null,
+
 });
 
 const cacheSession = (session: EnrollmentSession): void => {
