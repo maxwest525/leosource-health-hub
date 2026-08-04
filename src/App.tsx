@@ -24,6 +24,7 @@ import ComparePlans from "./pages/ComparePlans";
 import FindMAPD from "./pages/FindMAPD";
 import MapdSupplement from "./pages/MapdSupplement";
 import AdminDashboard from "./pages/AdminDashboard";
+import AgentReview from "./pages/AgentReview";
 import AdminDataImport from "./pages/AdminDataImport";
 import ToolsHub from "./pages/ToolsHub";
 import SubsidyCalculator from "./pages/SubsidyCalculator";
@@ -124,6 +125,7 @@ const App = () => (
             <Route path="/find-mapd" element={<FindMAPD />} />
             <Route path="/agent-login" element={<AgentLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/review" element={<AgentReview />} />
             <Route path="/admin/import" element={<AdminDataImport />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

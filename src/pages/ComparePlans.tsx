@@ -65,6 +65,7 @@ import { ChoiceTiles } from "@/components/wizard/ChoiceTiles";
 import { WizardSummary } from "@/components/wizard/WizardSummary";
 import { SecureStartGate } from "@/components/wizard/SecureStartGate";
 import { SaveProgressDialog } from "@/components/wizard/SaveProgressDialog";
+import { HandoffCompanion } from "@/components/enrollment/HandoffCompanion";
 import { VoiceGuide, type VoiceFields } from "@/components/wizard/VoiceGuide";
 import { useEnrollmentLock } from "@/hooks/use-enrollment-lock";
 import { toast } from "sonner";
@@ -2691,6 +2692,9 @@ const ComparePlans = () => {
           </div>
         </div>
       )}
+
+      {/* Post-handoff: TruEnroll and Trudy stay open here while HealthSherpa runs in its own tab. */}
+      <HandoffCompanion />
 
 
       {/* HERO */}
