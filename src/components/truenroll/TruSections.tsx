@@ -52,12 +52,13 @@ export const TruCenters = () => (
           to={to}
           className="group rounded-[18px] border border-[#E6EFF6] bg-white p-6 shadow-[0_10px_30px_-24px_rgba(15,43,70,0.5)] transition-all hover:-translate-y-1 hover:border-[#CFE3F4] hover:shadow-[0_20px_44px_-26px_rgba(15,43,70,0.45)]"
         >
-          <span className={`inline-flex h-11 w-11 items-center justify-center rounded-[12px] ${tint}`}>
-            <Icon className="h-5 w-5" />
-          </span>
-          <h3 className="mt-5 text-[17px] font-semibold text-[#0F2B46]">{title}</h3>
-          <p className="mt-2 text-[14px] leading-relaxed text-[#5C7A91]">{body}</p>
+          <div className="flex items-center gap-2.5">
+            <Icon className={`h-5 w-5 shrink-0 ${tint}`} strokeWidth={2} />
+            <h3 className="text-[17px] font-semibold text-[#0F2B46]">{title}</h3>
+          </div>
+          <p className="mt-2.5 text-[14px] leading-relaxed text-[#5C7A91]">{body}</p>
           <span className="mt-4 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-[#1877D2]">
+
             Open
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </span>
