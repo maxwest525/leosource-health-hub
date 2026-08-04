@@ -27,25 +27,26 @@ export const TruHero = () => (
     {/* Illustrated band: sits behind the chat card and runs to the right edge */}
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-y-0 right-0 hidden w-[46%] bg-cover bg-center lg:block"
+      className="pointer-events-none absolute inset-y-0 right-0 hidden w-[38%] bg-cover bg-center lg:block"
       style={{ backgroundImage: `url(${heroPath})` }}
     />
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-y-0 right-[38%] hidden w-[18%] bg-gradient-to-r from-white via-white/80 to-transparent lg:block"
+      className="pointer-events-none absolute inset-y-0 right-[26%] hidden w-[20%] bg-gradient-to-r from-white via-white to-transparent lg:block"
     />
 
-    <div className="relative mx-auto grid max-w-[1200px] items-center gap-12 px-5 py-14 lg:grid-cols-[1.02fr_1fr] lg:py-16">
+    <div className="relative mx-auto grid max-w-[1240px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.98fr] lg:py-16">
       <div>
         <p className="text-[12.5px] font-bold uppercase tracking-[0.09em] text-[#1877D2]">
           Self-enrollment made simple
         </p>
 
-        <h1 className="mt-4 text-[38px] font-bold leading-[1.12] tracking-[-0.025em] text-[#0F2B46] sm:text-[46px]">
+        <h1 className="mt-4 text-[36px] font-bold leading-[1.14] tracking-[-0.028em] text-[#0F2B46] lg:text-[41px] xl:text-[45px]">
           Understand your coverage.
           <br />
           Enroll on your own terms.
         </h1>
+
 
         <p className="mt-5 max-w-[470px] text-[16px] leading-[1.7] text-[#5C7A91]">
           TruEnroll is a consumer resource center that helps you compare and understand health
