@@ -294,6 +294,35 @@ const FindPrescriptions = () => {
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
+  /* Shared enrollment session: read household context, write the prescriptions. */
+  const { session: enrollment, ready: sessionReady, canEdit: sessionEditable, patch: patchSession } =
+    useEnrollmentSession();
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (!sessionReady || !enrollment || hydratedRef.current) return;
+    hydratedRef.current = true;
+    if (enrollment.zipCode) setZip(enrollment.zipCode);
+    const primary = enrollment.members[0];
+    if (primary?.dob) setAge(String(dobToAge(primary.dob)));
+    if (enrollment.savedPrescriptions.length > 0) {
+      setSavedDrugs(
+        enrollment.savedPrescriptions.map(r => ({ rxcui: r.id, name: r.name, strength: r.dosage })),
+      );
+    }
+  }, [sessionReady, enrollment]);
+
+  useEffect(() => {
+    if (!hydratedRef.current || !sessionEditable) return;
+    const handle = window.setTimeout(() => {
+      void patchSession({
+        saved_prescriptions: savedDrugs.map(d => ({ id: d.rxcui, name: d.name, dosage: d.strength })),
+      });
+    }, 600);
+    return () => window.clearTimeout(handle);
+  }, [savedDrugs, sessionEditable, patchSession]);
+
+
   useEffect(() => {
     if (!searchQuery || searchQuery.length < 2) {
       setSuggestions([]);
