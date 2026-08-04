@@ -9,28 +9,28 @@ const CENTERS = [
     title: "Resource centers",
     body: "Plain-language guides for ACA, Medicare, and dental so you know the rules before you shop.",
     to: "/resources",
-    tint: "bg-[#EEF6FF] text-[#1877D2]",
+    tint: "text-[#1877D2]",
   },
   {
     icon: Sparkles,
     title: "Plan matching",
     body: "Answer a few questions and see the plans that fit your budget, doctors, and prescriptions.",
     to: "/compare-plans",
-    tint: "bg-[#E9F7F4] text-[#17A2A2]",
+    tint: "text-[#17A2A2]",
   },
   {
     icon: Search,
     title: "Plan lookup",
     body: "Already have a plan in mind? Look it up by name or ID and read the real benefit details.",
     to: "/plan-lookup",
-    tint: "bg-[#FEF3EC] text-[#EF8A3C]",
+    tint: "text-[#EF8A3C]",
   },
   {
     icon: MessageCircle,
     title: "Live AI guidance",
     body: "Trudy answers coverage questions any time, and hands you to a licensed specialist on request.",
     to: "/ai-quote",
-    tint: "bg-[#F1EFFE] text-[#6A5AE0]",
+    tint: "text-[#6A5AE0]",
   },
 ];
 
