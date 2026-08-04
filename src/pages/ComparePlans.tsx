@@ -1562,6 +1562,23 @@ const ComparePlans = () => {
     setIsLoading(true);
     setError(null);
     setResultPage(1);
+
+    // Safe boundary: the intake is complete enough to quote, so persist it.
+    if (sessionEditable) {
+      void patchSession({
+        zip_code: zip,
+        county_fips: county.fips_code,
+        state: county.state,
+        household_size: Math.max(householdSize, dobs.length),
+        annual_income: income,
+        income_period: incomePeriod,
+        effective_date: effectiveDate,
+        members: buildSessionMembers(),
+        saved_doctors: savedDoctors.map(d => ({ id: d.npi, name: d.name })),
+        saved_prescriptions: savedRx.map(r => ({ id: r.rxcui, name: r.name })),
+      });
+    }
+
     try {
       const resolved: Place = { zipcode: zip, state: county.state, countyfips: county.fips_code };
       setPlace(resolved);
