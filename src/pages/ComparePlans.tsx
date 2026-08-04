@@ -2673,6 +2673,26 @@ const ComparePlans = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
+      {/* A licensed agent sent this application back for a correction. */}
+      {enrollment?.status === "needs_consumer_correction" && (
+        <div className="fixed top-16 inset-x-0 z-40 px-4">
+          <div className="mx-auto max-w-3xl rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+            <span className="font-semibold">A specialist asked for one correction.</span>{" "}
+            {enrollment.correctionNote ?? "Update the highlighted details and send it back for review."}
+          </div>
+        </div>
+      )}
+
+      {/* The application is with a licensed agent, so answers are read-only. */}
+      {sessionReady && !sessionEditable && enrollment?.status !== "needs_consumer_correction" && (
+        <div className="fixed top-16 inset-x-0 z-40 px-4">
+          <div className="mx-auto max-w-3xl rounded-xl border border-border/60 bg-card px-4 py-3 text-[13px] text-muted-foreground">
+            A licensed specialist is reviewing this application, so your answers are locked for now.
+          </div>
+        </div>
+      )}
+
+
       {/* HERO */}
       <section className={cn("relative pt-28 pb-12 md:pt-36 md:pb-16 overflow-hidden", step === 1 && "hidden sm:block")}>
         <div className="absolute inset-0 pointer-events-none">
