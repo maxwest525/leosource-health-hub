@@ -1047,16 +1047,12 @@ const ComparePlans = () => {
   const [zip, setZip] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
 
-  const [income, setIncome] = useState(() => readSavedIncome()?.income ?? 50000);
-  const [incomePeriod, setIncomePeriod] = useState<"year" | "month">(
-    () => readSavedIncome()?.period ?? "year",
-  );
+  const [income, setIncome] = useState(50000);
+  const [incomePeriod, setIncomePeriod] = useState<"year" | "month">("year");
   const displayIncome = incomePeriod === "year" ? income : Math.round(income / 12);
   const incomeMax = incomePeriod === "year" ? 200000 : 16600;
 
-  useEffect(() => {
-    writeSavedIncome(income, incomePeriod);
-  }, [income, incomePeriod]);
+
 
 
   const [dobs, setDobs] = useState<string[]>([dobFromAge(30)]);
