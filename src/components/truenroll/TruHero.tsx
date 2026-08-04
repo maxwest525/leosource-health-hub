@@ -32,7 +32,7 @@ export const TruHero = () => (
     />
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-y-0 right-[19%] hidden w-[10%] bg-gradient-to-r from-white via-white to-transparent lg:block"
+      className="pointer-events-none absolute inset-y-0 right-[8%] hidden w-[14%] bg-gradient-to-r from-white via-white to-transparent lg:block"
     />
 
     <div className="relative mx-auto grid max-w-[1240px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.98fr] lg:py-16">
