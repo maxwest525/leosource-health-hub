@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { TruHeader } from "@/components/truenroll/TruHeader";
 import { TruHero } from "@/components/truenroll/TruHero";
-import { TruCenters, TruSpotlights } from "@/components/truenroll/TruSections";
+import { TruCenters, TruSpotlights, TruTrustBar } from "@/components/truenroll/TruSections";
 import { TruTrudyStrip } from "@/components/truenroll/TruTrudyStrip";
 import { TruFooter } from "@/components/truenroll/TruFooter";
 
@@ -18,6 +18,8 @@ const HomeV2 = () => {
         <TruCenters />
         <TruTrudyStrip />
         <TruSpotlights />
+        <TruTrustBar />
+
 
       </main>
       <TruFooter />

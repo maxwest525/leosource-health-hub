@@ -1,88 +1,83 @@
 import { Link } from "react-router-dom";
-import { ShieldCheck, Facebook, Linkedin, Instagram, Youtube } from "lucide-react";
+import { Facebook, Twitter, Instagram, Linkedin, ShieldCheck } from "lucide-react";
+import { TruLogo } from "./TruLogo";
 
 const COLUMNS = [
   {
-    heading: "Coverage",
+    heading: "Explore",
     links: [
-      { label: "Individual and family", to: "/individual-family" },
+      { label: "Resource Center", to: "/resources" },
+      { label: "Plan Match", to: "/compare-plans" },
       { label: "Medicare", to: "/medicare" },
-      { label: "Dental and vision", to: "/dental-vision" },
-      { label: "Compare plans", to: "/compare-plans" },
+      { label: "Plan Lookup", to: "/plan-lookup" },
+      { label: "Trudy AI", to: "/ai-quote" },
     ],
   },
   {
     heading: "Tools",
     links: [
-      { label: "Plan lookup", to: "/plan-lookup" },
-      { label: "Subsidy calculator", to: "/subsidy-calculator" },
-      { label: "Doctor search", to: "/provider-search" },
-      { label: "Prescription check", to: "/find-prescriptions" },
-    ],
-  },
-  {
-    heading: "Learn",
-    links: [
-      { label: "Resource center", to: "/resources" },
-      { label: "Carrier directory", to: "/carriers" },
-      { label: "Ask Trudy", to: "/ai-quote" },
-      { label: "All tools", to: "/tools" },
+      { label: "Doctors", to: "/provider-search" },
+      { label: "Prescriptions", to: "/find-prescriptions" },
+      { label: "Subsidies", to: "/subsidy-calculator" },
+      { label: "Enrollment Help", to: "/get-started" },
+      { label: "Coverage Basics", to: "/resources" },
     ],
   },
   {
     heading: "Company",
     links: [
-      { label: "About us", to: "/about" },
+      { label: "About Us", to: "/about" },
       { label: "Contact", to: "/contact" },
-      { label: "Get started", to: "/get-started" },
-      { label: "Agent login", to: "/agent-login" },
+      { label: "Support", to: "/contact" },
+      { label: "FAQ", to: "/resources" },
+    ],
+  },
+  {
+    heading: "Legal",
+    links: [
+      { label: "Privacy Policy", to: "/contact" },
+      { label: "Terms", to: "/contact" },
+      { label: "Accessibility", to: "/contact" },
+      { label: "API Data Sources", to: "/carriers" },
     ],
   },
 ];
 
-const SOCIALS = [Facebook, Linkedin, Instagram, Youtube];
+const SOCIALS = [Facebook, Twitter, Instagram, Linkedin];
 
 export const TruFooter = () => (
   <footer className="border-t border-[#E3EDF5] bg-[#F7FBFD]">
-    <div className="mx-auto max-w-[1200px] px-5 py-14">
-      <div className="grid gap-10 lg:grid-cols-[1.3fr_repeat(4,1fr)]">
+    <div className="mx-auto max-w-[1240px] px-5 py-14">
+      <div className="grid gap-10 lg:grid-cols-[1.2fr_repeat(4,0.8fr)_1.2fr]">
         <div>
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1877D2]">
-              <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2.2} />
-            </span>
-            <span className="text-[20px] font-bold tracking-tight text-[#0F2B46]">
-              Tru<span className="text-[#1877D2]">Enroll</span>
-            </span>
-          </div>
-          <p className="mt-4 max-w-[300px] text-[14px] leading-relaxed text-[#5C7A91]">
-            An independent agency helping people understand health coverage and enroll without pressure.
+          <TruLogo />
+          <p className="mt-4 max-w-[280px] text-[13.5px] leading-relaxed text-[#5C7A91]">
+            We help consumers understand and enroll in health coverage, with confidence and without
+            sales pressure.
           </p>
-          <div className="mt-5 flex gap-4">
+          <div className="mt-5 flex gap-3">
             {SOCIALS.map((Icon, index) => (
-              <a
+              <Link
                 key={index}
-                href="/contact"
+                to="/contact"
                 aria-label="TruEnroll social profile"
-                className="text-[#8AA4B8] transition-colors hover:text-[#1877D2]"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1B3D5C] text-white transition-colors hover:bg-[#1877D2]"
               >
-                <Icon className="h-[18px] w-[18px]" />
-              </a>
+                <Icon className="h-[15px] w-[15px]" />
+              </Link>
             ))}
           </div>
         </div>
 
         {COLUMNS.map((column) => (
           <div key={column.heading}>
-            <p className="text-[13px] font-semibold uppercase tracking-[0.08em] text-[#0F2B46]">
-              {column.heading}
-            </p>
+            <p className="text-[14px] font-bold text-[#0F2B46]">{column.heading}</p>
             <ul className="mt-4 space-y-2.5">
               {column.links.map((link) => (
                 <li key={link.label}>
                   <Link
                     to={link.to}
-                    className="text-[14px] text-[#5C7A91] transition-colors hover:text-[#1877D2]"
+                    className="text-[13.5px] text-[#5C7A91] transition-colors hover:text-[#1877D2]"
                   >
                     {link.label}
                   </Link>
@@ -91,12 +86,28 @@ export const TruFooter = () => (
             </ul>
           </div>
         ))}
+
+        <div className="flex items-start gap-3 self-start rounded-[16px] border border-[#E1EEF8] bg-white px-5 py-5 shadow-[0_14px_36px_-30px_rgba(15,43,70,0.5)]">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#17A2A2]">
+            <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2.2} />
+          </span>
+          <p className="text-[12.5px] leading-relaxed text-[#5C7A91]">
+            <span className="font-bold text-[#0F2B46]">Powered by direct CMS + HealthSherpa APIs</span>{" "}
+            for accurate, up-to-date plan information.
+          </p>
+        </div>
       </div>
 
-      <div className="mt-12 flex flex-col gap-4 border-t border-[#E3EDF5] pt-6 text-[13px] text-[#7C97AC] sm:flex-row sm:items-center sm:justify-between">
+      <div className="mt-12 flex flex-col gap-4 border-t border-[#E3EDF5] pt-6 text-[12.5px] text-[#7C97AC] lg:flex-row lg:items-center lg:justify-between">
         <p>&copy; {new Date().getFullYear()} TruEnroll. All rights reserved.</p>
-        <p className="max-w-[620px] sm:text-right">
-          Not connected with or endorsed by the United States government or the federal Medicare program.
+        <div className="flex flex-wrap items-center gap-5">
+          <Link to="/contact" className="hover:text-[#1877D2]">Privacy Policy</Link>
+          <Link to="/contact" className="hover:text-[#1877D2]">Terms</Link>
+          <Link to="/contact" className="hover:text-[#1877D2]">Accessibility</Link>
+          <Link to="/contact" className="hover:text-[#1877D2]">Sitemap</Link>
+        </div>
+        <p className="lg:text-right">
+          This site is for informational purposes only and is not affiliated with any government agency.
         </p>
       </div>
     </div>
