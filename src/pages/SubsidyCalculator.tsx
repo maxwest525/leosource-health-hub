@@ -93,7 +93,12 @@ const SubsidyCalculator = () => {
           annual_income: income,
           income_period: "year",
           members: members.map((m, i) => ({
-            dob: ageToDob(m.age),
+            // Keep the exact birth date the consumer already gave, when we have it.
+            dob:
+              enrollment?.members[i] && dobToAge(enrollment.members[i].dob) === m.age
+                ? enrollment.members[i].dob
+                : ageToDob(m.age),
+
             relationship: i === 0 ? "primary" : i === 1 && married ? "spouse" : "dependent",
             tobacco: m.tobacco,
           })),
