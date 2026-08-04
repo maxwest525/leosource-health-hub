@@ -30,6 +30,7 @@ import SubsidyCalculator from "./pages/SubsidyCalculator";
 import CarrierDirectory from "./pages/CarrierDirectory";
 import PlanLookup from "./pages/PlanLookup";
 import AiQuote from "./pages/AiQuote";
+import HomeV2 from "./pages/HomeV2";
 
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => (
           <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
+            <Route path="/home-v2" element={<HomeV2 />} />
             <Route path="/individual-family" element={<IndividualFamily />} />
             <Route path="/medicare" element={<Medicare />} />
             <Route path="/dental-vision" element={<DentalVision />} />
