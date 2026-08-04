@@ -75,11 +75,11 @@ export const TruHero = () => (
           </Link>
         </div>
 
-        <ul className="mt-7 flex flex-wrap gap-2.5">
+        <ul className="mt-7 flex flex-wrap gap-2">
           {CHIPS.map(({ icon: Icon, tint, label }) => (
             <li
               key={label}
-              className="inline-flex items-center gap-2 rounded-full border border-[#E1EAF2] bg-white px-3.5 py-2 text-[13px] font-medium text-[#26455F]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#E1EAF2] bg-white px-3 py-1.5 text-[12.5px] font-medium text-[#26455F]"
             >
               <Icon className={`h-4 w-4 ${tint}`} strokeWidth={2} />
               {label}
