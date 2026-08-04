@@ -82,6 +82,24 @@ const SubsidyCalculator = () => {
       const first = result.estimates?.[0] ?? null;
       if (!first) throw new Error("The Marketplace did not return an estimate for that household.");
       setEstimate(first);
+
+      // Feed the normalized household back into the shared session.
+      if (sessionEditable) {
+        void patchSession({
+          zip_code: zip,
+          county_fips: resolved.countyfips,
+          state: resolved.state,
+          household_size: members.length,
+          annual_income: income,
+          income_period: "year",
+          members: members.map((m, i) => ({
+            dob: ageToDob(m.age),
+            relationship: i === 0 ? "primary" : i === 1 && married ? "spouse" : "dependent",
+            tobacco: m.tobacco,
+          })),
+        });
+      }
+
     } catch (e) {
       setError(e instanceof Error ? e.message : "We could not calculate your estimate. Please try again.");
     } finally {
