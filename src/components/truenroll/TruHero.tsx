@@ -11,13 +11,10 @@ const PROOF = [
 
 export const TruHero = () => (
   <section className="relative overflow-hidden bg-gradient-to-b from-[#F2F9FE] via-[#F7FBFD] to-white">
-    <img
-      src={landscape}
-      alt=""
+    <div
       aria-hidden="true"
-      width={1024}
-      height={1024}
-      className="pointer-events-none absolute bottom-0 left-0 w-full opacity-[0.28]"
+      className="pointer-events-none absolute inset-x-0 bottom-0 h-[220px] bg-cover bg-bottom opacity-40 [mask-image:linear-gradient(to_top,black,transparent)]"
+      style={{ backgroundImage: `url(${landscape})` }}
     />
     <div className="relative mx-auto grid max-w-[1200px] items-center gap-14 px-5 py-16 lg:grid-cols-[1.05fr_1fr] lg:py-24">
       <div>
