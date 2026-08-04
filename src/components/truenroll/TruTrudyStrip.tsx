@@ -20,6 +20,7 @@ export const TruTrudyStrip = () => (
             width={768}
             height={896}
             loading="lazy"
+            style={{ maskImage: "linear-gradient(to bottom, black 86%, transparent 100%)", WebkitMaskImage: "linear-gradient(to bottom, black 86%, transparent 100%)" }}
             className="pointer-events-none absolute -top-16 left-1/2 w-[210px] max-w-none -translate-x-1/2 drop-shadow-[0_22px_28px_rgba(15,43,70,0.18)] sm:w-[230px] lg:-top-24 lg:left-0 lg:w-[250px] lg:translate-x-0"
           />
         </div>
