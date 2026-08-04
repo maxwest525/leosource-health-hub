@@ -1277,23 +1277,76 @@ const ComparePlans = () => {
     setHouseholdSize(prev => (prev < dobs.length ? dobs.length : prev));
   }, [dobs.length]);
 
-  // Prefill from the homepage hero finder
+  /* ---------------------------------------------------------------- */
+  /*  DURABLE ENROLLMENT SESSION                                       */
+  /*  The server row is the source of truth. Step-local state stays as */
+  /*  it is; we hydrate once on arrival and sync at safe boundaries.   */
+  /* ---------------------------------------------------------------- */
+  const {
+    session: enrollment,
+    ready: sessionReady,
+    canEdit: sessionEditable,
+    patch: patchSession,
+  } = useEnrollmentSession();
+  const hydratedRef = useRef(false);
+
   useEffect(() => {
-    const prefill = readWizardPrefill();
-    if (!prefill) return;
-    setZip(prefill.zip);
-    setDobs(prefill.ages.map(a => dobFromAge(a)));
-    setTobacco(prefill.tobacco.length === prefill.ages.length ? prefill.tobacco : prefill.ages.map(() => false));
-    setGenders(prefill.ages.map(() => "Male"));
-    setDisabledFlags(prefill.ages.map(() => false));
-    setTribalFlags(prefill.ages.map(() => false));
-    setPregnantFlags(prefill.ages.map(() => false));
-    setRelationships(prefill.ages.map((_, i) => (i === 0 ? "primary" : i === 1 ? "spouse" : "dependent")));
-    setHouseholdSize(Math.max(1, prefill.ages.length));
+    if (!sessionReady || !enrollment || hydratedRef.current) return;
+    hydratedRef.current = true;
 
-    if (!readSavedIncome()) setIncome(prefill.income);
+    if (enrollment.zipCode) {
+      setZip(enrollment.zipCode);
+      setZipInstant(true);
+    }
+    if (enrollment.effectiveDate) setEffectiveDate(enrollment.effectiveDate);
 
-  }, []);
+    const members = enrollment.members;
+    if (members.length > 0) {
+      setDobs(members.map(m => m.dob));
+      setTobacco(members.map(m => Boolean(m.tobacco)));
+      setGenders(members.map(m => (m.gender === "female" ? "Female" : "Male")));
+      setRelationships(members.map(m => m.relationship as HsRelationship));
+      setDisabledFlags(members.map(m => Boolean(m.disabled)));
+      setTribalFlags(members.map(m => Boolean(m.tribal)));
+      setPregnantFlags(members.map(m => Boolean(m.pregnant)));
+      if (members.length > 1) setCoversOthers(true);
+    }
+    setHouseholdSize(Math.max(1, enrollment.householdSize ?? members.length ?? 1));
+
+    if (typeof enrollment.annualIncome === "number") {
+      // splitIncome derives `income` from the per-member list, so seed that.
+      const size = Math.max(1, members.length);
+      setMemberIncomes(Array.from({ length: size }, (_, i) => (i === 0 ? enrollment.annualIncome ?? 0 : 0)));
+      setIncome(enrollment.annualIncome);
+    }
+    if (enrollment.incomePeriod) setIncomePeriod(enrollment.incomePeriod);
+
+    if (enrollment.savedDoctors.length > 0) {
+      setSavedDoctors(enrollment.savedDoctors.map(d => ({ npi: d.id, name: d.name })));
+      setCheckDoctors(true);
+    }
+    if (enrollment.savedPrescriptions.length > 0) {
+      setSavedRx(enrollment.savedPrescriptions.map(r => ({ rxcui: r.id, name: r.name })));
+      setCheckRx(true);
+    }
+  }, [sessionReady, enrollment]);
+
+  /** Canonical member list built from the step-local arrays. */
+  const buildSessionMembers = useCallback(
+    (): EnrollmentMember[] =>
+      dobs.map((dob, i) => ({
+        dob,
+        relationship: (relationships[i] ?? (i === 0 ? "primary" : "dependent")) as EnrollmentMember["relationship"],
+        tobacco: Boolean(tobacco[i]),
+        gender: (genders[i] ?? "Male") === "Female" ? ("female" as const) : ("male" as const),
+        pregnant: Boolean(pregnantFlags[i]),
+        disabled: Boolean(disabledFlags[i]),
+        tribal: Boolean(tribalFlags[i]),
+      })),
+    [dobs, relationships, tobacco, genders, pregnantFlags, disabledFlags, tribalFlags],
+  );
+
+
 
 
   // Doctor autocomplete
