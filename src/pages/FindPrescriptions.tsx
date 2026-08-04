@@ -618,7 +618,15 @@ const FindPrescriptions = () => {
                         >
                           <Plus className="w-3 h-3" /> Add another
                         </button>
+                        {/* Continue the unified journey with these prescriptions saved. */}
+                        <Link
+                          to="/wizard"
+                          className="flex items-center gap-1 text-[12px] font-medium text-primary border border-primary/30 rounded-full px-3 py-1.5 hover:bg-primary/[0.05] transition-colors"
+                        >
+                          Continue to plans <ArrowRight className="w-3 h-3" />
+                        </Link>
                       </div>
+
                     </div>
                   )}
 
