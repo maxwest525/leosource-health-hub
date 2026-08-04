@@ -318,8 +318,8 @@ const ProviderSearch = () => {
     if (!hydratedRef.current || !sessionEditable) return;
     const handle = window.setTimeout(() => {
       void patchSession({
-        saved_doctors: savedProviders.map(p => ({ npi: p.npi, name: p.name, specialty: p.specialty }))
-          .map(p => ({ id: p.npi, name: p.name, specialty: p.specialty })),
+        saved_doctors: savedProviders.map(p => ({ id: p.npi, name: p.name, specialty: p.specialty })),
+
       });
     }, 600);
     return () => window.clearTimeout(handle);
