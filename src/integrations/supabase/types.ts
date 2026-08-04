@@ -1331,6 +1331,252 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      agent_add_note: {
+        Args: { _note: string; _session_id: string }
+        Returns: {
+          agent_note: string | null
+          annual_income: number | null
+          assigned_agent: string | null
+          compared_plans: Json
+          contact: Json | null
+          correction_note: string | null
+          county_fips: string | null
+          created_at: string
+          effective_date: string | null
+          external_id: string | null
+          field_corrections: Json
+          handoff_at: string | null
+          handoff_idempotency_key: string | null
+          handoff_opened_at: string | null
+          handoff_request_id: string | null
+          handoff_status: string | null
+          healthsherpa_client_apply_url: string | null
+          healthsherpa_confirmation_id: string | null
+          healthsherpa_enrollment_session_id: string | null
+          healthsherpa_enrollment_url: string | null
+          healthsherpa_shopping_url: string | null
+          household_size: number | null
+          id: string
+          income_period: string | null
+          last_reconciled_at: string | null
+          last_reconciliation_attempt_at: string | null
+          members: Json
+          policy_status: Json
+          public_token: string
+          reconciliation_error: string | null
+          reviewed_at: string | null
+          saved_doctors: Json
+          saved_prescriptions: Json
+          selected_plan: Json | null
+          state: string | null
+          status: Database["public"]["Enums"]["enrollment_session_status"]
+          updated_at: string
+          zip_code: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "enrollment_sessions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      agent_approve_review: {
+        Args: { _session_id: string }
+        Returns: {
+          agent_note: string | null
+          annual_income: number | null
+          assigned_agent: string | null
+          compared_plans: Json
+          contact: Json | null
+          correction_note: string | null
+          county_fips: string | null
+          created_at: string
+          effective_date: string | null
+          external_id: string | null
+          field_corrections: Json
+          handoff_at: string | null
+          handoff_idempotency_key: string | null
+          handoff_opened_at: string | null
+          handoff_request_id: string | null
+          handoff_status: string | null
+          healthsherpa_client_apply_url: string | null
+          healthsherpa_confirmation_id: string | null
+          healthsherpa_enrollment_session_id: string | null
+          healthsherpa_enrollment_url: string | null
+          healthsherpa_shopping_url: string | null
+          household_size: number | null
+          id: string
+          income_period: string | null
+          last_reconciled_at: string | null
+          last_reconciliation_attempt_at: string | null
+          members: Json
+          policy_status: Json
+          public_token: string
+          reconciliation_error: string | null
+          reviewed_at: string | null
+          saved_doctors: Json
+          saved_prescriptions: Json
+          selected_plan: Json | null
+          state: string | null
+          status: Database["public"]["Enums"]["enrollment_session_status"]
+          updated_at: string
+          zip_code: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "enrollment_sessions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      agent_claim_review: {
+        Args: { _session_id: string }
+        Returns: {
+          agent_note: string | null
+          annual_income: number | null
+          assigned_agent: string | null
+          compared_plans: Json
+          contact: Json | null
+          correction_note: string | null
+          county_fips: string | null
+          created_at: string
+          effective_date: string | null
+          external_id: string | null
+          field_corrections: Json
+          handoff_at: string | null
+          handoff_idempotency_key: string | null
+          handoff_opened_at: string | null
+          handoff_request_id: string | null
+          handoff_status: string | null
+          healthsherpa_client_apply_url: string | null
+          healthsherpa_confirmation_id: string | null
+          healthsherpa_enrollment_session_id: string | null
+          healthsherpa_enrollment_url: string | null
+          healthsherpa_shopping_url: string | null
+          household_size: number | null
+          id: string
+          income_period: string | null
+          last_reconciled_at: string | null
+          last_reconciliation_attempt_at: string | null
+          members: Json
+          policy_status: Json
+          public_token: string
+          reconciliation_error: string | null
+          reviewed_at: string | null
+          saved_doctors: Json
+          saved_prescriptions: Json
+          selected_plan: Json | null
+          state: string | null
+          status: Database["public"]["Enums"]["enrollment_session_status"]
+          updated_at: string
+          zip_code: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "enrollment_sessions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      agent_release_review: {
+        Args: { _session_id: string }
+        Returns: {
+          agent_note: string | null
+          annual_income: number | null
+          assigned_agent: string | null
+          compared_plans: Json
+          contact: Json | null
+          correction_note: string | null
+          county_fips: string | null
+          created_at: string
+          effective_date: string | null
+          external_id: string | null
+          field_corrections: Json
+          handoff_at: string | null
+          handoff_idempotency_key: string | null
+          handoff_opened_at: string | null
+          handoff_request_id: string | null
+          handoff_status: string | null
+          healthsherpa_client_apply_url: string | null
+          healthsherpa_confirmation_id: string | null
+          healthsherpa_enrollment_session_id: string | null
+          healthsherpa_enrollment_url: string | null
+          healthsherpa_shopping_url: string | null
+          household_size: number | null
+          id: string
+          income_period: string | null
+          last_reconciled_at: string | null
+          last_reconciliation_attempt_at: string | null
+          members: Json
+          policy_status: Json
+          public_token: string
+          reconciliation_error: string | null
+          reviewed_at: string | null
+          saved_doctors: Json
+          saved_prescriptions: Json
+          selected_plan: Json | null
+          state: string | null
+          status: Database["public"]["Enums"]["enrollment_session_status"]
+          updated_at: string
+          zip_code: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "enrollment_sessions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      agent_request_correction: {
+        Args: { _fields?: Json; _note: string; _session_id: string }
+        Returns: {
+          agent_note: string | null
+          annual_income: number | null
+          assigned_agent: string | null
+          compared_plans: Json
+          contact: Json | null
+          correction_note: string | null
+          county_fips: string | null
+          created_at: string
+          effective_date: string | null
+          external_id: string | null
+          field_corrections: Json
+          handoff_at: string | null
+          handoff_idempotency_key: string | null
+          handoff_opened_at: string | null
+          handoff_request_id: string | null
+          handoff_status: string | null
+          healthsherpa_client_apply_url: string | null
+          healthsherpa_confirmation_id: string | null
+          healthsherpa_enrollment_session_id: string | null
+          healthsherpa_enrollment_url: string | null
+          healthsherpa_shopping_url: string | null
+          household_size: number | null
+          id: string
+          income_period: string | null
+          last_reconciled_at: string | null
+          last_reconciliation_attempt_at: string | null
+          members: Json
+          policy_status: Json
+          public_token: string
+          reconciliation_error: string | null
+          reviewed_at: string | null
+          saved_doctors: Json
+          saved_prescriptions: Json
+          selected_plan: Json | null
+          state: string | null
+          status: Database["public"]["Enums"]["enrollment_session_status"]
+          updated_at: string
+          zip_code: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "enrollment_sessions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      current_actor: { Args: never; Returns: string }
       get_enrollment_session: {
         Args: { _public_token: string }
         Returns: {
@@ -1392,6 +1638,10 @@ export type Database = {
       lead_session_matches: {
         Args: { _lead_id: string; _session_id: string }
         Returns: boolean
+      }
+      record_enrollment_event: {
+        Args: { _detail?: Json; _event_type: string; _session_id: string }
+        Returns: undefined
       }
       save_enrollment_session: {
         Args: { _patch: Json; _public_token: string }
