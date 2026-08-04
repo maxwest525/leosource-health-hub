@@ -22,8 +22,9 @@ import { DobPicker } from "@/components/ui/dob-picker";
 import { ScrollFadeIn } from "@/hooks/use-scroll-animation";
 import QuoteFormDialog from "@/components/QuoteFormDialog";
 import { cn } from "@/lib/utils";
-import { readWizardPrefill } from "@/lib/wizard-prefill";
-import { readSavedIncome, writeSavedIncome } from "@/lib/income-storage";
+import { useEnrollmentSession } from "@/hooks/use-enrollment-session";
+import type { EnrollmentMember } from "@/lib/enrollment-session";
+
 import {
   searchDrugs,
   checkDrugCoverage,
@@ -1046,16 +1047,12 @@ const ComparePlans = () => {
   const [zip, setZip] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
 
-  const [income, setIncome] = useState(() => readSavedIncome()?.income ?? 50000);
-  const [incomePeriod, setIncomePeriod] = useState<"year" | "month">(
-    () => readSavedIncome()?.period ?? "year",
-  );
+  const [income, setIncome] = useState(50000);
+  const [incomePeriod, setIncomePeriod] = useState<"year" | "month">("year");
   const displayIncome = incomePeriod === "year" ? income : Math.round(income / 12);
   const incomeMax = incomePeriod === "year" ? 200000 : 16600;
 
-  useEffect(() => {
-    writeSavedIncome(income, incomePeriod);
-  }, [income, incomePeriod]);
+
 
 
   const [dobs, setDobs] = useState<string[]>([dobFromAge(30)]);
@@ -1280,23 +1277,76 @@ const ComparePlans = () => {
     setHouseholdSize(prev => (prev < dobs.length ? dobs.length : prev));
   }, [dobs.length]);
 
-  // Prefill from the homepage hero finder
+  /* ---------------------------------------------------------------- */
+  /*  DURABLE ENROLLMENT SESSION                                       */
+  /*  The server row is the source of truth. Step-local state stays as */
+  /*  it is; we hydrate once on arrival and sync at safe boundaries.   */
+  /* ---------------------------------------------------------------- */
+  const {
+    session: enrollment,
+    ready: sessionReady,
+    canEdit: sessionEditable,
+    patch: patchSession,
+  } = useEnrollmentSession();
+  const hydratedRef = useRef(false);
+
   useEffect(() => {
-    const prefill = readWizardPrefill();
-    if (!prefill) return;
-    setZip(prefill.zip);
-    setDobs(prefill.ages.map(a => dobFromAge(a)));
-    setTobacco(prefill.tobacco.length === prefill.ages.length ? prefill.tobacco : prefill.ages.map(() => false));
-    setGenders(prefill.ages.map(() => "Male"));
-    setDisabledFlags(prefill.ages.map(() => false));
-    setTribalFlags(prefill.ages.map(() => false));
-    setPregnantFlags(prefill.ages.map(() => false));
-    setRelationships(prefill.ages.map((_, i) => (i === 0 ? "primary" : i === 1 ? "spouse" : "dependent")));
-    setHouseholdSize(Math.max(1, prefill.ages.length));
+    if (!sessionReady || !enrollment || hydratedRef.current) return;
+    hydratedRef.current = true;
 
-    if (!readSavedIncome()) setIncome(prefill.income);
+    if (enrollment.zipCode) {
+      setZip(enrollment.zipCode);
+      setZipInstant(true);
+    }
+    if (enrollment.effectiveDate) setEffectiveDate(enrollment.effectiveDate);
 
-  }, []);
+    const members = enrollment.members;
+    if (members.length > 0) {
+      setDobs(members.map(m => m.dob));
+      setTobacco(members.map(m => Boolean(m.tobacco)));
+      setGenders(members.map(m => (m.gender === "female" ? "Female" : "Male")));
+      setRelationships(members.map(m => m.relationship as HsRelationship));
+      setDisabledFlags(members.map(m => Boolean(m.disabled)));
+      setTribalFlags(members.map(m => Boolean(m.tribal)));
+      setPregnantFlags(members.map(m => Boolean(m.pregnant)));
+      if (members.length > 1) setCoversOthers(true);
+    }
+    setHouseholdSize(Math.max(1, enrollment.householdSize ?? members.length ?? 1));
+
+    if (typeof enrollment.annualIncome === "number") {
+      // splitIncome derives `income` from the per-member list, so seed that.
+      const size = Math.max(1, members.length);
+      setMemberIncomes(Array.from({ length: size }, (_, i) => (i === 0 ? enrollment.annualIncome ?? 0 : 0)));
+      setIncome(enrollment.annualIncome);
+    }
+    if (enrollment.incomePeriod) setIncomePeriod(enrollment.incomePeriod);
+
+    if (enrollment.savedDoctors.length > 0) {
+      setSavedDoctors(enrollment.savedDoctors.map(d => ({ npi: d.id, name: d.name })));
+      setCheckDoctors(true);
+    }
+    if (enrollment.savedPrescriptions.length > 0) {
+      setSavedRx(enrollment.savedPrescriptions.map(r => ({ rxcui: r.id, name: r.name })));
+      setCheckRx(true);
+    }
+  }, [sessionReady, enrollment]);
+
+  /** Canonical member list built from the step-local arrays. */
+  const buildSessionMembers = useCallback(
+    (): EnrollmentMember[] =>
+      dobs.map((dob, i) => ({
+        dob,
+        relationship: (relationships[i] ?? (i === 0 ? "primary" : "dependent")) as EnrollmentMember["relationship"],
+        tobacco: Boolean(tobacco[i]),
+        gender: (genders[i] ?? "Male") === "Female" ? ("female" as const) : ("male" as const),
+        pregnant: Boolean(pregnantFlags[i]),
+        disabled: Boolean(disabledFlags[i]),
+        tribal: Boolean(tribalFlags[i]),
+      })),
+    [dobs, relationships, tobacco, genders, pregnantFlags, disabledFlags, tribalFlags],
+  );
+
+
 
 
   // Doctor autocomplete
@@ -1337,6 +1387,23 @@ const ComparePlans = () => {
     setRxInput("");
     setRxResults([]);
   };
+
+  /**
+   * Safe boundary: doctors and prescriptions are small, discrete lists, so they
+   * sync as soon as they settle rather than waiting for the quote.
+   */
+  useEffect(() => {
+    if (!hydratedRef.current || !sessionEditable) return;
+    const handle = window.setTimeout(() => {
+      void patchSession({
+        saved_doctors: savedDoctors.map(d => ({ id: d.npi, name: d.name })),
+        saved_prescriptions: savedRx.map(r => ({ id: r.rxcui, name: r.name })),
+      });
+    }, 600);
+    return () => window.clearTimeout(handle);
+  }, [savedDoctors, savedRx, sessionEditable, patchSession]);
+
+
 
   const county = useMemo(
     () => counties.find(c => c.fips_code === countyFips) ?? null,
@@ -1495,6 +1562,23 @@ const ComparePlans = () => {
     setIsLoading(true);
     setError(null);
     setResultPage(1);
+
+    // Safe boundary: the intake is complete enough to quote, so persist it.
+    if (sessionEditable) {
+      void patchSession({
+        zip_code: zip,
+        county_fips: county.fips_code,
+        state: county.state,
+        household_size: Math.max(householdSize, dobs.length),
+        annual_income: income,
+        income_period: incomePeriod,
+        effective_date: effectiveDate,
+        members: buildSessionMembers(),
+        saved_doctors: savedDoctors.map(d => ({ id: d.npi, name: d.name })),
+        saved_prescriptions: savedRx.map(r => ({ id: r.rxcui, name: r.name })),
+      });
+    }
+
     try {
       const resolved: Place = { zipcode: zip, state: county.state, countyfips: county.fips_code };
       setPlace(resolved);
@@ -1558,7 +1642,12 @@ const ComparePlans = () => {
       setIsLoading(false);
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     }
-  }, [county, zip, buildQuoteParams, standardizedOnly, sortBy, savedDoctors, savedRx]);
+  }, [
+    county, zip, buildQuoteParams, standardizedOnly, sortBy, savedDoctors, savedRx,
+    sessionEditable, patchSession, householdSize, dobs.length, income, incomePeriod,
+    effectiveDate, buildSessionMembers,
+  ]);
+
 
   const loadMorePlans = useCallback(async () => {
     if (!county || loadingMore) return;
@@ -2583,6 +2672,26 @@ const ComparePlans = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+
+      {/* A licensed agent sent this application back for a correction. */}
+      {enrollment?.status === "needs_consumer_correction" && (
+        <div className="fixed top-16 inset-x-0 z-40 px-4">
+          <div className="mx-auto max-w-3xl rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+            <span className="font-semibold">A specialist asked for one correction.</span>{" "}
+            {enrollment.correctionNote ?? "Update the highlighted details and send it back for review."}
+          </div>
+        </div>
+      )}
+
+      {/* The application is with a licensed agent, so answers are read-only. */}
+      {sessionReady && !sessionEditable && enrollment?.status !== "needs_consumer_correction" && (
+        <div className="fixed top-16 inset-x-0 z-40 px-4">
+          <div className="mx-auto max-w-3xl rounded-xl border border-border/60 bg-card px-4 py-3 text-[13px] text-muted-foreground">
+            A licensed specialist is reviewing this application, so your answers are locked for now.
+          </div>
+        </div>
+      )}
+
 
       {/* HERO */}
       <section className={cn("relative pt-28 pb-12 md:pt-36 md:pb-16 overflow-hidden", step === 1 && "hidden sm:block")}>

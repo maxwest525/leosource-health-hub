@@ -1,4 +1,8 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { useEnrollmentSession } from "@/hooks/use-enrollment-session";
+import { dobToAge } from "@/lib/adapters/applicant-adapter";
+
 import {
   Search, MapPin, Phone, ChevronDown, ChevronRight, X, Loader2,
   Pill, Plus, ShieldCheck, Users, AlertCircle, ArrowRight,
@@ -289,6 +293,35 @@ const FindPrescriptions = () => {
   const [suggestLoading, setSuggestLoading] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  /* Shared enrollment session: read household context, write the prescriptions. */
+  const { session: enrollment, ready: sessionReady, canEdit: sessionEditable, patch: patchSession } =
+    useEnrollmentSession();
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (!sessionReady || !enrollment || hydratedRef.current) return;
+    hydratedRef.current = true;
+    if (enrollment.zipCode) setZip(enrollment.zipCode);
+    const primary = enrollment.members[0];
+    if (primary?.dob) setAge(String(dobToAge(primary.dob)));
+    if (enrollment.savedPrescriptions.length > 0) {
+      setSavedDrugs(
+        enrollment.savedPrescriptions.map(r => ({ rxcui: r.id, name: r.name, strength: r.dosage })),
+      );
+    }
+  }, [sessionReady, enrollment]);
+
+  useEffect(() => {
+    if (!hydratedRef.current || !sessionEditable) return;
+    const handle = window.setTimeout(() => {
+      void patchSession({
+        saved_prescriptions: savedDrugs.map(d => ({ id: d.rxcui, name: d.name, dosage: d.strength })),
+      });
+    }, 600);
+    return () => window.clearTimeout(handle);
+  }, [savedDrugs, sessionEditable, patchSession]);
+
 
   useEffect(() => {
     if (!searchQuery || searchQuery.length < 2) {
@@ -585,7 +618,15 @@ const FindPrescriptions = () => {
                         >
                           <Plus className="w-3 h-3" /> Add another
                         </button>
+                        {/* Continue the unified journey with these prescriptions saved. */}
+                        <Link
+                          to="/wizard"
+                          className="flex items-center gap-1 text-[12px] font-medium text-primary border border-primary/30 rounded-full px-3 py-1.5 hover:bg-primary/[0.05] transition-colors"
+                        >
+                          Continue to plans <ArrowRight className="w-3 h-3" />
+                        </Link>
                       </div>
+
                     </div>
                   )}
 

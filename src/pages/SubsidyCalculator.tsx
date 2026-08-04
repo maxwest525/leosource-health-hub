@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useEnrollmentSession } from "@/hooks/use-enrollment-session";
+import { ageToDob, dobToAge } from "@/lib/adapters/applicant-adapter";
+
 import { Link } from "react-router-dom";
 import {
   Loader2, MapPin, Minus, Plus, DollarSign, AlertCircle, CheckCircle2,
@@ -32,8 +35,25 @@ const SubsidyCalculator = () => {
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [place, setPlace] = useState<Place | null>(null);
 
+  /* Shared enrollment session: reuse what the consumer already answered. */
+  const { session: enrollment, ready: sessionReady, canEdit: sessionEditable, patch: patchSession } =
+    useEnrollmentSession();
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (!sessionReady || !enrollment || hydratedRef.current) return;
+    hydratedRef.current = true;
+    if (enrollment.zipCode) setZip(enrollment.zipCode);
+    if (typeof enrollment.annualIncome === "number") setIncomeText(String(enrollment.annualIncome));
+    if (enrollment.members.length > 0) {
+      setMembers(enrollment.members.map(m => ({ age: dobToAge(m.dob), tobacco: Boolean(m.tobacco) })));
+      setMarried(enrollment.members.some(m => m.relationship === "spouse"));
+    }
+  }, [sessionReady, enrollment]);
+
   const updateMember = (index: number, patch: Partial<Member>) =>
     setMembers((prev) => prev.map((m, i) => (i === index ? { ...m, ...patch } : m)));
+
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -62,6 +82,29 @@ const SubsidyCalculator = () => {
       const first = result.estimates?.[0] ?? null;
       if (!first) throw new Error("The Marketplace did not return an estimate for that household.");
       setEstimate(first);
+
+      // Feed the normalized household back into the shared session.
+      if (sessionEditable) {
+        void patchSession({
+          zip_code: zip,
+          county_fips: resolved.countyfips,
+          state: resolved.state,
+          household_size: members.length,
+          annual_income: income,
+          income_period: "year",
+          members: members.map((m, i) => ({
+            // Keep the exact birth date the consumer already gave, when we have it.
+            dob:
+              enrollment?.members[i] && dobToAge(enrollment.members[i].dob) === m.age
+                ? enrollment.members[i].dob
+                : ageToDob(m.age),
+
+            relationship: i === 0 ? "primary" : i === 1 && married ? "spouse" : "dependent",
+            tobacco: m.tobacco,
+          })),
+        });
+      }
+
     } catch (e) {
       setError(e instanceof Error ? e.message : "We could not calculate your estimate. Please try again.");
     } finally {

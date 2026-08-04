@@ -1,4 +1,8 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { useEnrollmentSession } from "@/hooks/use-enrollment-session";
+import { dobToAge } from "@/lib/adapters/applicant-adapter";
+
 import {
   Search, MapPin, ChevronDown, X, Loader2, Plus, Users,
   ShieldCheck, AlertCircle, ArrowRight, CheckCircle2, Building2,
@@ -286,6 +290,41 @@ const ProviderSearch = () => {
   const [suggestLoading, setSuggestLoading] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  /* Shared enrollment session: read the household context, write the doctors. */
+  const { session: enrollment, ready: sessionReady, canEdit: sessionEditable, patch: patchSession } =
+    useEnrollmentSession();
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (!sessionReady || !enrollment || hydratedRef.current) return;
+    hydratedRef.current = true;
+    if (enrollment.zipCode) setZip(enrollment.zipCode);
+    const primary = enrollment.members[0];
+    if (primary?.dob) setAge(String(dobToAge(primary.dob)));
+    if (enrollment.savedDoctors.length > 0) {
+      setSavedProviders(
+        enrollment.savedDoctors.map(d => ({
+          npi: d.id,
+          name: d.name,
+          specialty: d.specialty ?? "",
+          type: "Individual" as const,
+        })),
+      );
+    }
+  }, [sessionReady, enrollment]);
+
+  useEffect(() => {
+    if (!hydratedRef.current || !sessionEditable) return;
+    const handle = window.setTimeout(() => {
+      void patchSession({
+        saved_doctors: savedProviders.map(p => ({ id: p.npi, name: p.name, specialty: p.specialty })),
+
+      });
+    }, 600);
+    return () => window.clearTimeout(handle);
+  }, [savedProviders, sessionEditable, patchSession]);
+
 
   useEffect(() => {
     if (!searchQuery || searchQuery.length < 3 || zip.trim().length < 5) {
@@ -609,7 +648,15 @@ const ProviderSearch = () => {
                         >
                           <Plus className="w-3 h-3" /> Add another
                         </button>
+                        {/* Continue the unified journey with these doctors saved. */}
+                        <Link
+                          to="/wizard"
+                          className="flex items-center gap-1 text-[12px] font-medium text-primary border border-primary/30 rounded-full px-3 py-1.5 hover:bg-primary/[0.05] transition-colors"
+                        >
+                          Continue to plans <ArrowRight className="w-3 h-3" />
+                        </Link>
                       </div>
+
                     </div>
                   )}
 

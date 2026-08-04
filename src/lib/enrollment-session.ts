@@ -273,10 +273,21 @@ export const loadEnrollmentSession = async (): Promise<EnrollmentSession | null>
   return session;
 };
 
-/** Returns the existing session, or creates one and migrates any legacy answers. */
-export const ensureEnrollmentSession = async (): Promise<EnrollmentSession> => {
+/**
+ * Guards against two mounts (React strict mode, or two tools racing) creating
+ * two rows for the same visitor. Everyone awaits the first call.
+ */
+let ensureInFlight: Promise<EnrollmentSession> | null = null;
+
+const createSession = async (): Promise<EnrollmentSession> => {
   const existing = await loadEnrollmentSession();
-  if (existing) return existing;
+  if (existing) {
+    // A visitor can bounce back through the hero finder after the session was
+    // created. Absorb those answers once instead of dropping them.
+    const late = isConsumerEditable(existing) ? legacyPatch() : null;
+    return late ? await patchEnrollmentSession(late) : existing;
+  }
+
 
   const { data, error } = await supabase.rpc("start_enrollment_session");
   if (error) throw new Error(error.message);
@@ -292,6 +303,23 @@ export const ensureEnrollmentSession = async (): Promise<EnrollmentSession> => {
   if (!session) throw new Error("Could not read the new enrollment session.");
   return session;
 };
+
+/** Returns the existing session, or creates one and migrates any legacy answers. */
+export const ensureEnrollmentSession = async (): Promise<EnrollmentSession> => {
+  if (!ensureInFlight) {
+    ensureInFlight = createSession().finally(() => {
+      ensureInFlight = null;
+    });
+  }
+  return await ensureInFlight;
+};
+
+/** True while the consumer is still allowed to edit their own answers. */
+export const isConsumerEditable = (session: EnrollmentSession | null): boolean =>
+  session === null ||
+  session.status === "intake_in_progress" ||
+  session.status === "needs_consumer_correction";
+
 
 /**
  * Merges a partial update into the server row. Only intake-stage sessions are
