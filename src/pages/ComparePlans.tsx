@@ -1388,6 +1388,23 @@ const ComparePlans = () => {
     setRxResults([]);
   };
 
+  /**
+   * Safe boundary: doctors and prescriptions are small, discrete lists, so they
+   * sync as soon as they settle rather than waiting for the quote.
+   */
+  useEffect(() => {
+    if (!hydratedRef.current || !sessionEditable) return;
+    const handle = window.setTimeout(() => {
+      void patchSession({
+        saved_doctors: savedDoctors.map(d => ({ id: d.npi, name: d.name })),
+        saved_prescriptions: savedRx.map(r => ({ id: r.rxcui, name: r.name })),
+      });
+    }, 600);
+    return () => window.clearTimeout(handle);
+  }, [savedDoctors, savedRx, sessionEditable, patchSession]);
+
+
+
   const county = useMemo(
     () => counties.find(c => c.fips_code === countyFips) ?? null,
     [counties, countyFips],
