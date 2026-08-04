@@ -32,8 +32,25 @@ const SubsidyCalculator = () => {
   const [estimate, setEstimate] = useState<Estimate | null>(null);
   const [place, setPlace] = useState<Place | null>(null);
 
+  /* Shared enrollment session: reuse what the consumer already answered. */
+  const { session: enrollment, ready: sessionReady, canEdit: sessionEditable, patch: patchSession } =
+    useEnrollmentSession();
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (!sessionReady || !enrollment || hydratedRef.current) return;
+    hydratedRef.current = true;
+    if (enrollment.zipCode) setZip(enrollment.zipCode);
+    if (typeof enrollment.annualIncome === "number") setIncomeText(String(enrollment.annualIncome));
+    if (enrollment.members.length > 0) {
+      setMembers(enrollment.members.map(m => ({ age: dobToAge(m.dob), tobacco: Boolean(m.tobacco) })));
+      setMarried(enrollment.members.some(m => m.relationship === "spouse"));
+    }
+  }, [sessionReady, enrollment]);
+
   const updateMember = (index: number, patch: Partial<Member>) =>
     setMembers((prev) => prev.map((m, i) => (i === index ? { ...m, ...patch } : m)));
+
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
