@@ -1,0 +1,411 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Manrope:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 215 30% 10%;
+
+    --card: 210 20% 100%;
+    --card-foreground: 215 30% 10%;
+
+    --popover: 210 20% 100%;
+    --popover-foreground: 215 30% 10%;
+
+    --primary: 212 87% 24%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 214 70% 30%;
+
+    --secondary: 210 14% 93%;
+    --secondary-foreground: 215 14% 18%;
+
+    --muted: 210 10% 90%;
+    --muted-foreground: 215 10% 40%;
+
+    --accent: 40 95% 55%;
+    --accent-foreground: 214 72% 18%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 210 14% 84%;
+    --input: 210 14% 84%;
+    --ring: 214 65% 25%;
+
+    --radius: 0.75rem;
+
+    --surface-elevated: 210 10% 95%;
+    --surface-raised: 0 0% 100%;
+    --surface-sunken: 212 30% 96.5%;
+    --text-primary: 215 30% 10%;
+    --text-secondary: 215 12% 28%;
+    --text-muted: 215 8% 45%;
+    --blue-subtle: 214 70% 22%;
+    --border-subtle: 210 14% 80%;
+
+    /* Deep navy anchor band */
+    --ink: 214 62% 10%;
+    --ink-raised: 214 52% 14%;
+    --ink-foreground: 210 32% 97%;
+    --ink-muted: 212 20% 72%;
+    --ink-border: 214 36% 24%;
+
+    --hairline: 212 20% 88%;
+    --shadow-soft: 0 1px 2px hsl(214 40% 12% / 0.04), 0 8px 24px -12px hsl(214 40% 12% / 0.10);
+    --shadow-lift: 0 2px 4px hsl(214 40% 12% / 0.05), 0 24px 48px -24px hsl(214 40% 12% / 0.22);
+
+    --sidebar-background: 210 10% 96%;
+    --sidebar-foreground: 215 10% 22%;
+    --sidebar-primary: 214 72% 20%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 12% 93%;
+    --sidebar-accent-foreground: 215 10% 22%;
+    --sidebar-border: 210 10% 86%;
+    --sidebar-ring: 214 72% 20%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-feature-settings: 'ss01', 'cv01';
+  }
+
+  h1, h2, h3, .font-display {
+    font-family: 'Sora', 'Manrope', -apple-system, sans-serif;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+}
+
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hover-lift {
+    @apply transition-all duration-300 ease-out hover:-translate-y-0.5;
+  }
+
+  .subtle-glow {
+    box-shadow: 0 0 40px -10px hsl(var(--blue-subtle) / 0.25);
+  }
+
+  /* Subtle noise texture overlay */
+  .texture-noise {
+    position: relative;
+  }
+  .texture-noise::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
+
+  /* Section background variants */
+  .section-bg-subtle {
+    @apply relative;
+    background: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(210 25% 96%) 50%, hsl(var(--background)) 100%);
+  }
+
+  .section-bg-warm {
+    @apply relative;
+    background: linear-gradient(135deg, hsl(210 20% 97%) 0%, hsl(210 25% 95%) 50%, hsl(215 18% 97%) 100%);
+  }
+
+  .section-bg-cool {
+    @apply relative;
+    background: linear-gradient(180deg, hsl(210 30% 97%) 0%, hsl(210 20% 98%) 100%);
+  }
+
+  /* Hairline rule used at the top of every band */
+  .hairline-rule {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      hsl(var(--hairline)) 18%,
+      hsl(var(--hairline)) 82%,
+      transparent
+    );
+  }
+
+  /* Fine decorative lattice */
+  .dot-lattice {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.04;
+    background-image: radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
+
+  .eyebrow {
+    @apply text-[10.5px] font-semibold uppercase tracking-[0.32em] text-primary;
+  }
+
+}
+
+
+@layer components {
+  .section-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Deep navy anchor band. Flips the surface tokens so every child component
+     stays token-driven instead of hardcoding light-on-dark colors. */
+  .band-ink {
+    --background: var(--ink);
+    --foreground: var(--ink-foreground);
+    --card: var(--ink-raised);
+    --card-foreground: var(--ink-foreground);
+    --muted: 214 40% 18%;
+    --muted-foreground: var(--ink-muted);
+    --border: var(--ink-border);
+    --input: var(--ink-border);
+    --hairline: var(--ink-border);
+    --primary: 40 92% 60%;
+    --primary-foreground: 214 62% 10%;
+    --secondary: 214 44% 17%;
+    --secondary-foreground: var(--ink-foreground);
+    --surface-raised: var(--ink-raised);
+    --surface-sunken: 214 58% 12%;
+    --shadow-soft: 0 1px 2px hsl(0 0% 0% / 0.3), 0 10px 30px -16px hsl(0 0% 0% / 0.6);
+    --shadow-lift: 0 2px 6px hsl(0 0% 0% / 0.35), 0 28px 56px -28px hsl(0 0% 0% / 0.7);
+
+    background-color: hsl(var(--ink));
+    color: hsl(var(--ink-foreground));
+  }
+
+  /* One card treatment for the whole marketing site. */
+  .premium-card {
+    @apply relative overflow-hidden rounded-2xl border border-border/70 bg-surface-raised;
+    box-shadow: var(--shadow-soft);
+    transition:
+      transform 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 300ms ease;
+  }
+
+  .premium-card::before {
+    content: '';
+    position: absolute;
+    inset-inline: 1.25rem;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, hsl(var(--primary) / 0.5), transparent);
+    opacity: 0;
+    transition: opacity 400ms ease;
+    pointer-events: none;
+  }
+
+  .premium-card:hover {
+    @apply border-primary/35;
+    box-shadow: var(--shadow-lift);
+  }
+
+  .premium-card:hover::before {
+    opacity: 1;
+  }
+
+  .premium-card-static:hover {
+    transform: none;
+  }
+
+
+  .section-header {
+    @apply text-[11px] uppercase tracking-[0.3em] text-primary font-semibold mb-3;
+  }
+
+  .section-divider {
+    @apply flex items-center justify-center gap-2 mb-4;
+  }
+
+  .section-divider-line {
+    @apply h-px w-8 bg-accent/40;
+  }
+
+  .section-divider-dot {
+    @apply w-1.5 h-1.5 rounded-full bg-accent/70;
+  }
+
+  .depth-bg {
+    @apply absolute inset-0 pointer-events-none;
+  }
+
+  .depth-blob {
+    @apply absolute rounded-full blur-[100px];
+  }
+
+  .depth-line {
+    @apply absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-border/40 to-transparent;
+  }
+
+  .dot-grid {
+    @apply absolute inset-0 opacity-[0.035];
+    background-image: radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+}
+
+@layer base {
+  /* Scoped dark console theme for the AI quote walkthrough. Keeps the brand
+     navy/gold palette but inverts the surface so the depth effects read. */
+  .quote-console {
+    --background: 215 45% 7%;
+    --foreground: 210 30% 96%;
+
+    --card: 215 40% 11%;
+    --card-foreground: 210 30% 96%;
+
+    --popover: 215 40% 11%;
+    --popover-foreground: 210 30% 96%;
+
+    --primary: 40 95% 58%;
+    --primary-foreground: 215 45% 8%;
+    --primary-glow: 40 95% 66%;
+
+    --secondary: 215 32% 16%;
+    --secondary-foreground: 210 30% 94%;
+
+    --muted: 215 30% 16%;
+    --muted-foreground: 213 18% 68%;
+
+    --accent: 40 95% 58%;
+    --accent-foreground: 215 45% 8%;
+
+    --border: 213 28% 22%;
+    --input: 213 28% 22%;
+    --ring: 40 95% 58%;
+
+    --surface-elevated: 215 38% 13%;
+    --text-primary: 210 30% 96%;
+    --text-secondary: 213 18% 78%;
+    --text-muted: 213 15% 62%;
+
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  PRINT: plan comparison recap                                       */
+/* ------------------------------------------------------------------ */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  body *:not(#print-recap):not(#print-recap *) {
+    background: none !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+  }
+
+  #print-recap,
+  #print-recap * {
+    visibility: visible !important;
+  }
+
+  #print-recap {
+    display: block !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0 8mm;
+    color: #0b1b33;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  #print-recap .print-head h1 {
+    font-size: 18pt;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  #print-recap .print-head p {
+    margin: 2pt 0 0;
+    font-size: 10pt;
+  }
+
+  #print-recap .print-meta {
+    color: #5a6b82;
+  }
+
+  #print-recap h2 {
+    font-size: 12pt;
+    font-weight: 700;
+    margin: 16pt 0 6pt;
+    border-bottom: 1px solid #c8d3e2;
+    padding-bottom: 3pt;
+  }
+
+  #print-recap .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+
+  #print-recap .print-table th,
+  #print-recap .print-table td {
+    border: 1px solid #d5dee9;
+    padding: 4pt 6pt;
+    text-align: left;
+    vertical-align: top;
+    font-size: 10pt;
+  }
+
+  #print-recap .print-table thead th {
+    background: #eef2f8;
+    font-weight: 700;
+  }
+
+  #print-recap .print-table tbody th {
+    width: 32%;
+    font-weight: 600;
+    background: #f7f9fc;
+  }
+
+  #print-recap .print-table tr {
+    page-break-inside: avoid;
+  }
+
+  #print-recap .print-note {
+    margin-top: 12pt;
+    font-size: 9pt;
+    color: #5a6b82;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+}
