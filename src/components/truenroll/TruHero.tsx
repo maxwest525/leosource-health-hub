@@ -40,55 +40,59 @@ export const TruHero = () => (
 
     <div className="relative mx-auto grid max-w-[1240px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.98fr] lg:py-16">
       <div>
-        <p className="text-[12.5px] font-bold uppercase tracking-[0.09em] text-[#1877D2]">
+        <p className="text-[13px] font-bold uppercase tracking-[0.13em] text-[#1877D2]">
           Self-enrollment made simple
         </p>
 
-        <h1 className="mt-4 text-[36px] font-bold leading-[1.14] tracking-[-0.028em] text-[#0F2B46] lg:text-[41px] xl:text-[45px]">
+        <h1 className="mt-4 text-[38px] font-bold leading-[1.12] tracking-[-0.03em] text-[#0B2545] lg:text-[44px] xl:text-[48px]">
           Understand your coverage.
           <br />
           Enroll on your own terms.
         </h1>
 
-
-        <p className="mt-5 max-w-[470px] text-[16px] leading-[1.7] text-[#5C7A91]">
+        <p className="mt-5 max-w-[470px] text-[16px] leading-[1.65] text-[#6B8497]">
           TruEnroll is a consumer resource center that helps you compare and understand health
           coverage, so you can enroll with confidence, without the hassle of sales calls.
         </p>
 
-        <p className="mt-5 flex max-w-[430px] items-start gap-2.5 text-[14px] leading-[1.5] text-[#41607A]">
-          <BadgeCheck className="mt-[1px] h-[18px] w-[18px] shrink-0 text-[#22B573]" strokeWidth={2} />
+        <p className="mt-6 flex max-w-[420px] items-start gap-3 text-[14px] font-medium leading-[1.5] text-[#1B3D5C]">
+          <ShieldCheck className="mt-[1px] h-[21px] w-[21px] shrink-0 text-[#17A2A2]" strokeWidth={1.9} />
           Powered by direct CMS + HealthSherpa APIs for accurate, up-to-date plan information.
         </p>
 
-        <div className="mt-7 flex flex-wrap items-center gap-3.5">
+        <div className="mt-7 flex flex-wrap items-center gap-4">
           <Link
             to="/compare-plans"
-            className="inline-flex items-center gap-2.5 rounded-[10px] bg-[#EF4B3C] px-6 py-3 text-[15px] font-semibold text-white shadow-[0_12px_26px_-14px_rgba(239,75,60,0.9)] transition-colors hover:bg-[#df3f30]"
+            className="inline-flex items-center gap-3 rounded-[8px] bg-[#F04A20] px-7 py-3.5 text-[15.5px] font-semibold text-white shadow-[0_12px_26px_-16px_rgba(240,74,32,0.9)] transition-colors hover:bg-[#dc4019]"
           >
             Get Started
-            <ArrowRight className="h-[17px] w-[17px]" />
+            <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.2} />
           </Link>
           <Link
             to="/ai-quote"
-            className="inline-flex items-center gap-2.5 rounded-[10px] border border-[#9EC7EE] bg-white px-6 py-3 text-[15px] font-semibold text-[#1877D2] transition-colors hover:bg-[#F0F7FE]"
+            className="inline-flex items-center gap-3 rounded-[8px] border-[1.5px] border-[#2E7FE0] bg-white px-7 py-3.5 text-[15.5px] font-semibold text-[#1877D2] transition-colors hover:bg-[#F0F7FE]"
           >
             Talk to Trudy
-            <MessageCircle className="h-[17px] w-[17px]" />
+            <MessageCircle className="h-[18px] w-[18px]" strokeWidth={2} />
           </Link>
         </div>
 
-        <ul className="mt-7 flex flex-wrap gap-1.5 lg:w-[540px] lg:flex-nowrap xl:w-[580px]">
-          {CHIPS.map(({ icon: Icon, tint, label }) => (
+        <ul className="mt-8 flex flex-wrap gap-2.5 lg:w-[560px] lg:flex-nowrap xl:w-[600px]">
+          {CHIPS.map(({ icon: Icon, glyph, tint, label }) => (
             <li
               key={label}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[#E1EAF2] bg-white px-2.5 py-1.5 text-[12px] font-medium text-[#26455F]"
+              className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-[#DCE7F0] bg-white px-3.5 py-2 text-[13px] font-medium text-[#1B3D5C]"
             >
-              <Icon className={`h-4 w-4 shrink-0 ${tint}`} strokeWidth={2} />
+              {Icon ? (
+                <Icon className={`h-[17px] w-[17px] shrink-0 ${tint}`} strokeWidth={2} />
+              ) : (
+                <span className={`shrink-0 text-[14px] font-bold leading-none ${tint}`}>{glyph}</span>
+              )}
               {label}
             </li>
           ))}
         </ul>
+
       </div>
 
       <div className="lg:mr-[6%] xl:mr-[9%]">
