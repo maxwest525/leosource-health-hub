@@ -45,16 +45,8 @@ const CENTERS = [
 
 export const TruCenters = () => (
   <section className="mx-auto max-w-[1240px] px-5 py-14 lg:py-16">
-    <div className="max-w-[620px]">
-      <h2 className="text-[32px] font-bold leading-tight tracking-[-0.02em] text-[#0F2B46] sm:text-[38px]">
-        Everything you need to choose with confidence
-      </h2>
-      <p className="mt-4 text-[16.5px] leading-relaxed text-[#4C6980]">
-        Research, compare, and verify in one place. Nothing is submitted until you say so.
-      </p>
-    </div>
+    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
 
-    <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
       {CENTERS.map(({ icon: Icon, title, body, to, tint }) => (
         <Link
           key={title}
