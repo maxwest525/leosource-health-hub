@@ -27,12 +27,12 @@ export const TruHero = () => (
     {/* Illustrated band: sits behind the chat card and runs to the right edge */}
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-y-0 right-0 hidden w-[38%] bg-cover bg-center lg:block"
+      className="pointer-events-none absolute inset-y-0 right-0 hidden w-[20%] bg-cover bg-center lg:block"
       style={{ backgroundImage: `url(${heroPath})` }}
     />
     <div
       aria-hidden="true"
-      className="pointer-events-none absolute inset-y-0 right-[26%] hidden w-[20%] bg-gradient-to-r from-white via-white to-transparent lg:block"
+      className="pointer-events-none absolute inset-y-0 right-[19%] hidden w-[10%] bg-gradient-to-r from-white via-white to-transparent lg:block"
     />
 
     <div className="relative mx-auto grid max-w-[1240px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.98fr] lg:py-16">
@@ -88,7 +88,7 @@ export const TruHero = () => (
         </ul>
       </div>
 
-      <div className="lg:mr-[-9%]">
+      <div className="lg:mr-[6%] xl:mr-[9%]">
         <TruChatPanel />
       </div>
     </div>
