@@ -26,7 +26,7 @@ export const HandoffCompanion = () => {
   return (
     <aside
       aria-label="Enrollment handoff"
-      className="mx-auto mt-6 max-w-[1240px] rounded-2xl border border-[#CFE6F7] bg-[#F5FBFF] px-5 py-4"
+      className="mx-4 mt-24 max-w-[1240px] lg:mx-auto rounded-2xl border border-[#CFE6F7] bg-[#F5FBFF] px-5 py-4"
     >
       <div className="flex flex-wrap items-center gap-3">
         <ShieldCheck className="h-5 w-5 shrink-0 text-[#1877D2]" aria-hidden />
