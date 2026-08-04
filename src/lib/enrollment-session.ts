@@ -281,7 +281,13 @@ let ensureInFlight: Promise<EnrollmentSession> | null = null;
 
 const createSession = async (): Promise<EnrollmentSession> => {
   const existing = await loadEnrollmentSession();
-  if (existing) return existing;
+  if (existing) {
+    // A visitor can bounce back through the hero finder after the session was
+    // created. Absorb those answers once instead of dropping them.
+    const late = isConsumerEditable(existing) ? legacyPatch() : null;
+    return late ? await patchEnrollmentSession(late) : existing;
+  }
+
 
   const { data, error } = await supabase.rpc("start_enrollment_session");
   if (error) throw new Error(error.message);
