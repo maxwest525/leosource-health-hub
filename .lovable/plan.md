@@ -79,3 +79,65 @@ FindMAPD is the one place the audit found something genuinely unusable, and the 
 ## Technical notes
 
 Session lives in `sessionStorage` under one key with a version field and a migration read for the two legacy keys. No new tables, no new API layer, no new form library. ComparePlans keeps its internal `useState` for step-local UI and syncs the durable fields into the session on step transitions, so the 3178-line file is edited at its boundaries rather than restructured.
+
+---
+
+# Addendum: approved corrections (applied)
+
+## Correction 6 — FindMAPD root cause: DATA_SOURCE_EMPTY_OR_DISCONNECTED
+
+Investigation complete. Two independent causes, neither of them "broken code":
+
+1. **The import pipeline was never run in this project.** `data_import_log` has zero rows. `AdminDataImport.tsx` is the only writer and has never executed here, so `plans`/`providers`/`medications`/`carriers`/`formularies`/`provider_networks` were never populated.
+2. **The Data API grants did not survive the remix.** On all six tables the only grantee is the internal `sandbox_exec` role. There is no `GRANT` to `anon`, `authenticated`, or `service_role`. RLS policies exist and are correct ("Public can read plans", etc.), but without grants PostgREST refuses the read regardless. So even after a successful import, `src/lib/services/*` would still return nothing.
+
+Ruled out: the project points at its own Supabase project with valid env vars, RLS policies are present and permissive for reads, and no other database holds this data. The remix carried schema and policies but not rows and not grants.
+
+FindMAPD is classified `DATA_SOURCE_EMPTY_OR_DISCONNECTED`. No Medicare architecture decision is made in this plan. Fixing it is a grants migration plus one import run, not a rewrite.
+
+## Correction 7 — Runtime receipts
+
+Recorded against the live functions before any refactor.
+
+- `cms-lookup` / `countyByZip` → `{"counties":[{"zipcode":"78704","name":"Travis County","fips":"48453","state":"TX"}]}`
+- `cms-lookup` / `issuers` (TX, 2026) → issuer array with `id`, `name`, `address`, `individual_url`, `toll_free`
+- `healthsherpa` / `status` → `{"configured":true}`
+- `healthsherpa` / `counties` → `{"counties":[{"fips_code":"48453","name":"Travis County","state":"TX"}]}`
+- `healthsherpa` / `quotes` (78704, household 1, $42k, 2026-09-01) → priced plans with `pricing.gross_premium 432.65`, `subsidy_applied 310.0`, `net_premium 122.65`, plus `issuer`, `network`, `documents`
+
+Notable: quoted plans carry `api_enrollable: false`. That confirms agent-assisted handoff is the correct terminal step, not API enrollment.
+
+Not yet receipted, and not to be refactored until they are: `ai-quote`, `coverage-concierge`, `voice-guide`, `send-quote-request`, and every `src/lib/services/*` call.
+
+## Correction 1 — Server-persisted session
+
+`src/lib/enrollment-session.ts` is no longer a sessionStorage module. New table `enrollment_sessions` is the source of truth. The browser holds only an unguessable `public_token` and an optional non-authoritative cache for instant paint.
+
+Consumers are anonymous, so they cannot be given direct row access by `auth.uid()`. Access goes through security-definer RPCs keyed on the token (`get_enrollment_session`, `upsert_enrollment_session`), with no direct `anon` SELECT or UPDATE on the table. Staff read and write through the existing `is_staff(auth.uid())` pattern already used by `tool_leads`.
+
+## Correction 2 — Agent review state
+
+`enrollment_session_status` enum: `intake_in_progress`, `ready_for_agent_review`, `needs_consumer_correction`, `agent_approved`, `healthsherpa_handoff_created`, `enrollment_completion_unknown`, `enrollment_confirmed`, `follow_up_required`.
+
+`AdminDashboard.tsx` gains an enrollment-session queue beside the existing lead list: filter by status, open a session, see the full validated record, and act — approve, request consumer correction with a note, or take over. Trudy may prepare and validate; only the licensed agent moves a session to `agent_approved`.
+
+## Correction 3 — Handoff request shape
+
+The selected plan is persisted to the TruEnroll session and displayed to both consumer and agent as the intended plan to confirm inside HealthSherpa. The `agent_assisted` enrollment-session request does **not** carry `plan_id`, because that flow does not accept it. `location.state` is included in the request.
+
+## Correction 4 — Trudy during handoff
+
+HealthSherpa opens in a new tab (`target="_blank"`, `rel="noopener"`). TruEnroll stays in the original tab with Trudy live against the persisted session. Trudy's system prompt gains an explicit constraint: she can read the TruEnroll session but has no visibility into and no control over the HealthSherpa page, and must not imply otherwise.
+
+## Correction 5 — Post-handoff reconciliation
+
+At handoff, persist a non-PII `external_id` we generate. When HealthSherpa returns a confirmation ID, reconcile it onto the same row. Policy-status endpoints then update application state, policy state, payment, effective date, balance, and grace period. Absent status is written as `unknown` and the session sits in `enrollment_completion_unknown` — never `failed`.
+
+## Revised build order
+
+1. Migration: `enrollment_sessions` + status enum + token RPCs + grants. Separately, restore the missing Data API grants on the six import tables.
+2. `enrollment-session.ts` client over the RPCs, absorbing the two legacy sessionStorage keys on first read.
+3. ComparePlans writes the session at each step boundary; ProviderSearch, FindPrescriptions, SubsidyCalculator read it and push back.
+4. Agent review queue in AdminDashboard.
+5. Handoff step and reconciliation.
+6. Trudy wiring last, once the session is real.
