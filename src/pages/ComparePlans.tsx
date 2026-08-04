@@ -22,8 +22,9 @@ import { DobPicker } from "@/components/ui/dob-picker";
 import { ScrollFadeIn } from "@/hooks/use-scroll-animation";
 import QuoteFormDialog from "@/components/QuoteFormDialog";
 import { cn } from "@/lib/utils";
-import { readWizardPrefill } from "@/lib/wizard-prefill";
-import { readSavedIncome, writeSavedIncome } from "@/lib/income-storage";
+import { useEnrollmentSession } from "@/hooks/use-enrollment-session";
+import type { EnrollmentMember } from "@/lib/enrollment-session";
+
 import {
   searchDrugs,
   checkDrugCoverage,
