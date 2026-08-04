@@ -38,13 +38,13 @@ export const TruHero = () => (
       className="pointer-events-none absolute inset-y-0 right-[8%] hidden w-[14%] bg-gradient-to-r from-white via-white to-transparent lg:block"
     />
 
-    <div className="relative mx-auto grid max-w-[1240px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.1fr_0.98fr] lg:py-16">
+    <div className="relative mx-auto grid max-w-[1240px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.3fr_0.9fr] lg:py-16">
       <div>
         <p className="text-[13px] font-bold uppercase tracking-[0.13em] text-[#1877D2]">
           Self-enrollment made simple
         </p>
 
-        <h1 className="mt-4 text-[38px] font-bold leading-[1.12] tracking-[-0.03em] text-[#0B2545] lg:text-[44px] xl:text-[48px]">
+        <h1 className="mt-4 text-[34px] font-bold leading-[1.12] tracking-[-0.03em] text-[#0B2545] sm:text-[40px] lg:whitespace-nowrap lg:text-[42px] xl:text-[46px]">
           Understand your coverage.
           <br />
           Enroll on your own terms.
@@ -77,7 +77,7 @@ export const TruHero = () => (
           </Link>
         </div>
 
-        <ul className="mt-8 flex flex-wrap gap-2.5 lg:w-[560px] lg:flex-nowrap xl:w-[600px]">
+        <ul className="mt-8 flex flex-wrap gap-2.5 ">
           {CHIPS.map(({ icon: Icon, glyph, tint, label }) => (
             <li
               key={label}
