@@ -287,6 +287,41 @@ const ProviderSearch = () => {
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
+  /* Shared enrollment session: read the household context, write the doctors. */
+  const { session: enrollment, ready: sessionReady, canEdit: sessionEditable, patch: patchSession } =
+    useEnrollmentSession();
+  const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    if (!sessionReady || !enrollment || hydratedRef.current) return;
+    hydratedRef.current = true;
+    if (enrollment.zipCode) setZip(enrollment.zipCode);
+    const primary = enrollment.members[0];
+    if (primary?.dob) setAge(String(dobToAge(primary.dob)));
+    if (enrollment.savedDoctors.length > 0) {
+      setSavedProviders(
+        enrollment.savedDoctors.map(d => ({
+          npi: d.id,
+          name: d.name,
+          specialty: d.specialty ?? "",
+          type: "Individual" as const,
+        })),
+      );
+    }
+  }, [sessionReady, enrollment]);
+
+  useEffect(() => {
+    if (!hydratedRef.current || !sessionEditable) return;
+    const handle = window.setTimeout(() => {
+      void patchSession({
+        saved_doctors: savedProviders.map(p => ({ npi: p.npi, name: p.name, specialty: p.specialty }))
+          .map(p => ({ id: p.npi, name: p.name, specialty: p.specialty })),
+      });
+    }, 600);
+    return () => window.clearTimeout(handle);
+  }, [savedProviders, sessionEditable, patchSession]);
+
+
   useEffect(() => {
     if (!searchQuery || searchQuery.length < 3 || zip.trim().length < 5) {
       setSuggestions([]);
