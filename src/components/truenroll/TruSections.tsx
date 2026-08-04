@@ -9,28 +9,28 @@ const CENTERS = [
     title: "Resource centers",
     body: "Plain-language guides for ACA, Medicare, and dental so you know the rules before you shop.",
     to: "/resources",
-    tint: "bg-[#EEF6FF] text-[#1877D2]",
+    tint: "text-[#1877D2]",
   },
   {
     icon: Sparkles,
     title: "Plan matching",
     body: "Answer a few questions and see the plans that fit your budget, doctors, and prescriptions.",
     to: "/compare-plans",
-    tint: "bg-[#E9F7F4] text-[#17A2A2]",
+    tint: "text-[#17A2A2]",
   },
   {
     icon: Search,
     title: "Plan lookup",
     body: "Already have a plan in mind? Look it up by name or ID and read the real benefit details.",
     to: "/plan-lookup",
-    tint: "bg-[#FEF3EC] text-[#EF8A3C]",
+    tint: "text-[#EF8A3C]",
   },
   {
     icon: MessageCircle,
     title: "Live AI guidance",
     body: "Trudy answers coverage questions any time, and hands you to a licensed specialist on request.",
     to: "/ai-quote",
-    tint: "bg-[#F1EFFE] text-[#6A5AE0]",
+    tint: "text-[#6A5AE0]",
   },
 ];
 
@@ -52,12 +52,13 @@ export const TruCenters = () => (
           to={to}
           className="group rounded-[18px] border border-[#E6EFF6] bg-white p-6 shadow-[0_10px_30px_-24px_rgba(15,43,70,0.5)] transition-all hover:-translate-y-1 hover:border-[#CFE3F4] hover:shadow-[0_20px_44px_-26px_rgba(15,43,70,0.45)]"
         >
-          <span className={`inline-flex h-11 w-11 items-center justify-center rounded-[12px] ${tint}`}>
-            <Icon className="h-5 w-5" />
-          </span>
-          <h3 className="mt-5 text-[17px] font-semibold text-[#0F2B46]">{title}</h3>
-          <p className="mt-2 text-[14px] leading-relaxed text-[#5C7A91]">{body}</p>
+          <div className="flex items-center gap-2.5">
+            <Icon className={`h-5 w-5 shrink-0 ${tint}`} strokeWidth={2} />
+            <h3 className="text-[17px] font-semibold text-[#0F2B46]">{title}</h3>
+          </div>
+          <p className="mt-2.5 text-[14px] leading-relaxed text-[#5C7A91]">{body}</p>
           <span className="mt-4 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-[#1877D2]">
+
             Open
             <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </span>
