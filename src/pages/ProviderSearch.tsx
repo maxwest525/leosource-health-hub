@@ -1,4 +1,8 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { Link } from "react-router-dom";
+import { useEnrollmentSession } from "@/hooks/use-enrollment-session";
+import { dobToAge } from "@/lib/adapters/applicant-adapter";
+
 import {
   Search, MapPin, ChevronDown, X, Loader2, Plus, Users,
   ShieldCheck, AlertCircle, ArrowRight, CheckCircle2, Building2,
