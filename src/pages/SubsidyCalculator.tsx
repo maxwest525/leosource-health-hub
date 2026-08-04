@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useEnrollmentSession } from "@/hooks/use-enrollment-session";
+import { ageToDob, dobToAge } from "@/lib/adapters/applicant-adapter";
+
 import { Link } from "react-router-dom";
 import {
   Loader2, MapPin, Minus, Plus, DollarSign, AlertCircle, CheckCircle2,
