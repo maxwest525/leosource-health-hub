@@ -98,6 +98,12 @@ export type EnrollmentSession = {
   healthsherpaEnrollmentUrl: string | null;
   policyStatus: PolicyStatus;
   correctionNote: string | null;
+  /** Fields an agent explicitly marked for consumer correction. */
+  fieldCorrections: string[];
+  handoffStatus: string | null;
+  healthsherpaShoppingUrl: string | null;
+  healthsherpaClientApplyUrl: string | null;
+
 };
 
 /** Fields a consumer surface is allowed to write. */
