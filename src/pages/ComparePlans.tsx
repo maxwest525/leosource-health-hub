@@ -2692,6 +2692,11 @@ const ComparePlans = () => {
         </div>
       )}
 
+      {/* Post-handoff: TruEnroll and Trudy stay open here while HealthSherpa runs in its own tab. */}
+      <div className="px-4 pt-20">
+        <HandoffCompanion />
+      </div>
+
 
       {/* HERO */}
       <section className={cn("relative pt-28 pb-12 md:pt-36 md:pb-16 overflow-hidden", step === 1 && "hidden sm:block")}>
