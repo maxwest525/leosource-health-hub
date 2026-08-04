@@ -1642,7 +1642,12 @@ const ComparePlans = () => {
       setIsLoading(false);
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     }
-  }, [county, zip, buildQuoteParams, standardizedOnly, sortBy, savedDoctors, savedRx]);
+  }, [
+    county, zip, buildQuoteParams, standardizedOnly, sortBy, savedDoctors, savedRx,
+    sessionEditable, patchSession, householdSize, dobs.length, income, incomePeriod,
+    effectiveDate, buildSessionMembers,
+  ]);
+
 
   const loadMorePlans = useCallback(async () => {
     if (!county || loadingMore) return;
