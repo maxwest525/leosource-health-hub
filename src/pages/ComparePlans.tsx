@@ -1403,7 +1403,7 @@ const ComparePlans = () => {
     const handle = window.setTimeout(() => {
       void patchSession({
         saved_doctors: savedDoctors.map(d => ({ id: d.npi, name: d.name })),
-        saved_prescriptions: savedRx.map(r => ({ id: r.rxcui, name: r.name })),
+        saved_prescriptions: savedRx.map(r => rxNormPrescription(r.rxcui, r.name)),
       });
     }, 600);
     return () => window.clearTimeout(handle);
@@ -1581,7 +1581,7 @@ const ComparePlans = () => {
         effective_date: effectiveDate,
         members: buildSessionMembers(),
         saved_doctors: savedDoctors.map(d => ({ id: d.npi, name: d.name })),
-        saved_prescriptions: savedRx.map(r => ({ id: r.rxcui, name: r.name })),
+        saved_prescriptions: savedRx.map(r => rxNormPrescription(r.rxcui, r.name)),
       });
     }
 

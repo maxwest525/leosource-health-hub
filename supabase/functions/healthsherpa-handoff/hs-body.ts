@@ -26,6 +26,11 @@ export type PrescriptionRef = { id: string } | { rx_norm_identifier: string };
  * Verified HealthSherpa catalog identifiers keep their provenance as `id`;
  * RxNorm/RxCUI identifiers are sent as `rx_norm_identifier`. Never a name fallback,
  * and never an RxNorm value emitted as a generic `id`.
+ *
+ * Legacy compatibility: rows saved by the CMS drug search before provenance was
+ * recorded carry a bare, all-digit `id` and nothing else. HealthSherpa catalog
+ * identifiers are never bare digits, so such a value is treated as RxNorm.
+ * An explicitly marked catalog id is never reinterpreted.
  */
 export const verifiedPrescriptions = (rx: unknown): PrescriptionRef[] => {
   if (!Array.isArray(rx)) return [];
@@ -38,18 +43,21 @@ export const verifiedPrescriptions = (rx: unknown): PrescriptionRef[] => {
     const rxNorm = String(raw.rxcui ?? raw.rxnorm_id ?? raw.rx_norm_identifier ?? "").trim();
     const idField = String(raw.id ?? "").trim();
     const idIsRxNorm = raw.id_type === "rxnorm" || raw.id_type === "rxcui";
+    const idIsCatalog = raw.id_type === "healthsherpa" || raw.id_type === "hs";
 
     let ref: PrescriptionRef | null = null;
     if (catalogId && /^[A-Za-z0-9_-]+$/.test(catalogId)) ref = { id: catalogId };
     else if (rxNorm && /^[0-9]+$/.test(rxNorm)) ref = { rx_norm_identifier: rxNorm };
     else if (idField && /^[A-Za-z0-9_-]+$/.test(idField)) {
-      ref = idIsRxNorm ? { rx_norm_identifier: idField } : { id: idField };
+      const legacyRxNorm = !idIsCatalog && !raw.id_type && /^[0-9]+$/.test(idField);
+      ref = idIsRxNorm || legacyRxNorm ? { rx_norm_identifier: idField } : { id: idField };
     }
     if (!ref) continue;
     out.set(JSON.stringify(ref), ref);
   }
   return [...out.values()];
 };
+
 
 const RELATIONSHIPS = new Set(["primary", "spouse", "dependent"]);
 
