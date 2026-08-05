@@ -130,6 +130,8 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
     throw new Error("exactly_one_primary_required");
   }
   const primaryIndex = Math.max(0, relationships.indexOf("primary"));
+  const prescriptions = clientPrescriptions(row.saved_prescriptions, primaryIndex);
+
 
   const applicants = members.map((member, index) => {
     const isPrimary = index === primaryIndex;
