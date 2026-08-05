@@ -1,8 +1,9 @@
 /** Pure request-shaping helpers for the HealthSherpa agent-assisted contract. */
 
-
 type SessionRow = Record<string, any>;
 export const LOCALES: Record<string, string> = { en: "en-US", es: "es-MX" };
+
+export const AGENT_NOTE_MAX = 500;
 
 const digits = (value: unknown): string => String(value ?? "").replace(/\D/g, "");
 
@@ -19,44 +20,79 @@ export const verifiedNpis = (doctors: unknown): string[] => {
   return [...out];
 };
 
-/** Verified HealthSherpa medication id or RxNorm id only. Never a name fallback. */
-export const verifiedPrescriptions = (rx: unknown): Array<{ id: string }> => {
+export type PrescriptionRef = { id: string } | { rx_norm_identifier: string };
+
+/**
+ * Verified HealthSherpa catalog identifiers keep their provenance as `id`;
+ * RxNorm/RxCUI identifiers are sent as `rx_norm_identifier`. Never a name fallback,
+ * and never an RxNorm value emitted as a generic `id`.
+ */
+export const verifiedPrescriptions = (rx: unknown): PrescriptionRef[] => {
   if (!Array.isArray(rx)) return [];
-  const out = new Map<string, { id: string }>();
+  const out = new Map<string, PrescriptionRef>();
   for (const item of rx) {
     const raw = (item ?? {}) as Record<string, unknown>;
     if (raw.verified === false || raw.manual === true || raw.unresolved === true) continue;
-    const id = String(raw.hs_id ?? raw.medication_id ?? raw.rxcui ?? raw.rxnorm_id ?? raw.id ?? "").trim();
-    if (!id || !/^[A-Za-z0-9_-]+$/.test(id)) continue;
-    out.set(id, { id });
+
+    const catalogId = String(raw.hs_id ?? raw.medication_id ?? "").trim();
+    const rxNorm = String(raw.rxcui ?? raw.rxnorm_id ?? raw.rx_norm_identifier ?? "").trim();
+    const idField = String(raw.id ?? "").trim();
+    const idIsRxNorm = raw.id_type === "rxnorm" || raw.id_type === "rxcui";
+
+    let ref: PrescriptionRef | null = null;
+    if (catalogId && /^[A-Za-z0-9_-]+$/.test(catalogId)) ref = { id: catalogId };
+    else if (rxNorm && /^[0-9]+$/.test(rxNorm)) ref = { rx_norm_identifier: rxNorm };
+    else if (idField && /^[A-Za-z0-9_-]+$/.test(idField)) {
+      ref = idIsRxNorm ? { rx_norm_identifier: idField } : { id: idField };
+    }
+    if (!ref) continue;
+    out.set(JSON.stringify(ref), ref);
   }
   return [...out.values()];
+};
+
+const RELATIONSHIPS = new Set(["primary", "spouse", "dependent"]);
+
+/** Legacy `child` is normalised to `dependent`; anything else is rejected. */
+export const normalizeRelationship = (value: unknown, index: number): string => {
+  const raw = String(value ?? (index === 0 ? "primary" : "dependent")).toLowerCase();
+  const normalized = raw === "child" ? "dependent" : raw;
+  if (!RELATIONSHIPS.has(normalized)) {
+    throw new Error(`unsupported_relationship: ${raw}`);
+  }
+  return normalized;
 };
 
 /** Canonical session -> HealthSherpa agent-assisted enrollment-session body. */
 export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: string) => {
   const members: any[] = Array.isArray(row.members) ? row.members : [];
   const contact = (row.contact ?? {}) as Record<string, string | undefined>;
+  // Used only to derive the plan year; the household schema is closed and
+  // does not accept an effective_date property.
   const effectiveDate: string = row.effective_date ?? `${new Date().getFullYear() + 1}-01-01`;
   const planYear = Number(effectiveDate.slice(0, 4));
   const prescriptions = verifiedPrescriptions(row.saved_prescriptions);
   const providers = verifiedNpis(row.saved_doctors);
 
-  const primaryIndex = Math.max(
-    0,
-    members.findIndex((m) => (m?.relationship ?? "primary") === "primary"),
-  );
+  const relationships = members.map((m, i) => normalizeRelationship(m?.relationship, i));
+  const primaryCount = relationships.filter((r) => r === "primary").length;
+  if (members.length > 0 && primaryCount !== 1) {
+    throw new Error("exactly_one_primary_required");
+  }
+  const primaryIndex = Math.max(0, relationships.indexOf("primary"));
 
   const applicants = members.map((member, index) => {
     const isPrimary = index === primaryIndex;
     const sex = String(member?.sex ?? member?.gender ?? "").toLowerCase();
+    const income = typeof member?.income === "number" ? member.income : null;
+    const employer = typeof member?.employer === "string" && member.employer ? member.employer : null;
     return {
-      relationship: member?.relationship ?? (index === 0 ? "primary" : "dependent"),
+      relationship: relationships[index],
       date_of_birth: member?.dob,
       ...(sex === "male" || sex === "female" ? { sex } : {}),
       uses_tobacco: Boolean(member?.tobacco),
-      ...(typeof member?.income === "number"
-        ? { income_sources: [{ type: "wages", amount: member.income, frequency: "yearly" }] }
+      ...(income !== null
+        ? { income_sources: [{ amount: income, ...(employer ? { employer } : {}) }] }
         : {}),
       ...(isPrimary
         ? {
@@ -69,6 +105,10 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
       ...(isPrimary && prescriptions.length > 0 ? { prescriptions } : {}),
     };
   });
+
+  if (agentNote && agentNote.length > AGENT_NOTE_MAX) {
+    throw new Error("agent_note_too_long");
+  }
 
   return {
     context: {
@@ -89,11 +129,9 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
     household: {
       annual_income: Number(row.annual_income ?? 0),
       household_size: Math.max(Number(row.household_size ?? applicants.length), applicants.length),
-      effective_date: effectiveDate,
       applicants,
     },
     ...(providers.length > 0 ? { providers } : {}),
-    ...(agentNote ? { notes: agentNote.slice(0, 500) } : {}),
+    ...(agentNote ? { notes: agentNote } : {}),
   };
 };
-
