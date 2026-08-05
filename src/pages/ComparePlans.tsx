@@ -24,6 +24,7 @@ import QuoteFormDialog from "@/components/QuoteFormDialog";
 import { cn } from "@/lib/utils";
 import { useEnrollmentSession } from "@/hooks/use-enrollment-session";
 import type { EnrollmentMember } from "@/lib/enrollment-session";
+import { prescriptionRxcui, rxNormPrescription } from "@/lib/enrollment-session";
 
 import {
   searchDrugs,
