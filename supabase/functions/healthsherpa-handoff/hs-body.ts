@@ -58,10 +58,7 @@ export const verifiedPrescriptions = (rx: unknown): PrescriptionRef[] => {
   return [...out.values()];
 };
 
-export type TopLevelPrescription = PrescriptionRef & {
-  applicant_index: number;
-  duration?: number;
-};
+export type ApplicantPrescription = PrescriptionRef & { duration?: number };
 
 /** Reads a nonnegative integer days-supply, if the saved row actually has one. */
 const savedDuration = (raw: Record<string, unknown>): number | undefined => {
@@ -72,20 +69,15 @@ const savedDuration = (raw: Record<string, unknown>): number | undefined => {
 };
 
 /**
- * Live contract, established by three authorized non-consumer observations
- * (all 2026-08-05):
- *  - 6654bbdb-88b5-4080-9cb3-976fa92eb1d2: objects must carry the legacy
- *    `{ id, duration, applicant_index, rx_norm_identifier }` linkage shape.
- *  - 6a8ff4cb-a00e-414e-ad4c-9e840f4997df: `client.prescriptions` is rejected -
- *    "Prescriptions is not a recognized field".
- *  - e6a8a9b1-6d87-4ffd-84ae-cf6bb9fc06b1: `applicant_index` inside
- *    `household.applicants[].prescriptions[]` is rejected -
- *    "Applicant index is not a recognized field".
- * Therefore prescriptions are emitted as a TOP-LEVEL `prescriptions` array,
- * sibling of `client`, `household`, `providers` and `notes`, each object
- * carrying `applicant_index`. `duration` only when the saved row has one.
+ * Documented `/v1/enrollment-sessions` shape: prescriptions are nested on the
+ * applicant they belong to, each object carrying only its own documented
+ * identifier (`rx_norm_identifier` for CMS/RxNorm, `id` only for a genuine
+ * HealthSherpa catalog id) plus an optional documented integer `duration`.
+ *
+ * No `applicant_index`, no top-level `prescriptions`, no `client.prescriptions`
+ * - all three were rejected live (see CONTRACT.md).
  */
-export const topLevelPrescriptions = (rx: unknown, applicantIndex: number): TopLevelPrescription[] => {
+export const applicantPrescriptions = (rx: unknown): ApplicantPrescription[] => {
   const refs = verifiedPrescriptions(rx);
   const durations = new Map<string, number>();
   if (Array.isArray(rx)) {
@@ -102,9 +94,10 @@ export const topLevelPrescriptions = (rx: unknown, applicantIndex: number): TopL
   return refs.map((ref) => {
     const key = "id" in ref ? ref.id : ref.rx_norm_identifier;
     const duration = durations.get(key);
-    return { ...ref, applicant_index: applicantIndex, ...(duration !== undefined ? { duration } : {}) };
+    return { ...ref, ...(duration !== undefined ? { duration } : {}) };
   });
 };
+
 
 
 
