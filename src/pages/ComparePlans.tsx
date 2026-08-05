@@ -24,6 +24,7 @@ import QuoteFormDialog from "@/components/QuoteFormDialog";
 import { cn } from "@/lib/utils";
 import { useEnrollmentSession } from "@/hooks/use-enrollment-session";
 import type { EnrollmentMember } from "@/lib/enrollment-session";
+import { prescriptionRxcui, rxNormPrescription } from "@/lib/enrollment-session";
 
 import {
   searchDrugs,
@@ -1327,7 +1328,11 @@ const ComparePlans = () => {
       setCheckDoctors(true);
     }
     if (enrollment.savedPrescriptions.length > 0) {
-      setSavedRx(enrollment.savedPrescriptions.map(r => ({ rxcui: r.id, name: r.name })));
+      setSavedRx(
+        enrollment.savedPrescriptions
+          .map(r => ({ rxcui: prescriptionRxcui(r) ?? "", name: r.name }))
+          .filter(d => d.rxcui !== ""),
+      );
       setCheckRx(true);
     }
   }, [sessionReady, enrollment]);
@@ -1398,7 +1403,7 @@ const ComparePlans = () => {
     const handle = window.setTimeout(() => {
       void patchSession({
         saved_doctors: savedDoctors.map(d => ({ id: d.npi, name: d.name })),
-        saved_prescriptions: savedRx.map(r => ({ id: r.rxcui, name: r.name })),
+        saved_prescriptions: savedRx.map(r => rxNormPrescription(r.rxcui, r.name)),
       });
     }, 600);
     return () => window.clearTimeout(handle);
@@ -1576,7 +1581,7 @@ const ComparePlans = () => {
         effective_date: effectiveDate,
         members: buildSessionMembers(),
         saved_doctors: savedDoctors.map(d => ({ id: d.npi, name: d.name })),
-        saved_prescriptions: savedRx.map(r => ({ id: r.rxcui, name: r.name })),
+        saved_prescriptions: savedRx.map(r => rxNormPrescription(r.rxcui, r.name)),
       });
     }
 

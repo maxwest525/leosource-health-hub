@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useEnrollmentSession } from "@/hooks/use-enrollment-session";
+import { prescriptionRxcui, rxNormPrescription } from "@/lib/enrollment-session";
 import { dobToAge } from "@/lib/adapters/applicant-adapter";
 
 import {
@@ -307,7 +308,9 @@ const FindPrescriptions = () => {
     if (primary?.dob) setAge(String(dobToAge(primary.dob)));
     if (enrollment.savedPrescriptions.length > 0) {
       setSavedDrugs(
-        enrollment.savedPrescriptions.map(r => ({ rxcui: r.id, name: r.name, strength: r.dosage })),
+        enrollment.savedPrescriptions
+          .map(r => ({ rxcui: prescriptionRxcui(r) ?? "", name: r.name, strength: r.dosage }))
+          .filter(d => d.rxcui !== ""),
       );
     }
   }, [sessionReady, enrollment]);
@@ -316,7 +319,7 @@ const FindPrescriptions = () => {
     if (!hydratedRef.current || !sessionEditable) return;
     const handle = window.setTimeout(() => {
       void patchSession({
-        saved_prescriptions: savedDrugs.map(d => ({ id: d.rxcui, name: d.name, dosage: d.strength })),
+        saved_prescriptions: savedDrugs.map(d => rxNormPrescription(d.rxcui, d.name, d.strength)),
       });
     }, 600);
     return () => window.clearTimeout(handle);
