@@ -58,7 +58,7 @@ export const verifiedPrescriptions = (rx: unknown): PrescriptionRef[] => {
   return [...out.values()];
 };
 
-export type ClientPrescription = PrescriptionRef & {
+export type ApplicantPrescription = PrescriptionRef & {
   applicant_index: number;
   duration?: number;
 };
@@ -72,12 +72,16 @@ const savedDuration = (raw: Record<string, unknown>): number | undefined => {
 };
 
 /**
- * Live contract (observed 2026-08-05, request id 6654bbdb-88b5-4080-9cb3-976fa92eb1d2):
- * prescriptions belong on the top-level `client.prescriptions` array as
- * `[{ id, duration, applicant_index, rx_norm_identifier }]`, not on applicants.
- * `duration` is emitted only when the saved row carries a real days-supply value.
+ * Live contract, established by two observations:
+ *  - 6654bbdb-88b5-4080-9cb3-976fa92eb1d2 (2026-08-05): objects must carry the
+ *    legacy `{ id, duration, applicant_index, rx_norm_identifier }` linkage shape.
+ *  - 6a8ff4cb-a00e-414e-ad4c-9e840f4997df (2026-08-05): a top-level
+ *    `client.prescriptions` array is rejected - "Prescriptions is not a recognized field".
+ * Therefore prescriptions stay nested on the primary applicant and each object
+ * carries `applicant_index`. `duration` is emitted only when the saved row
+ * carries a real days-supply value.
  */
-export const clientPrescriptions = (rx: unknown, applicantIndex: number): ClientPrescription[] => {
+export const applicantPrescriptions = (rx: unknown, applicantIndex: number): ApplicantPrescription[] => {
   const refs = verifiedPrescriptions(rx);
   const durations = new Map<string, number>();
   if (Array.isArray(rx)) {
@@ -121,7 +125,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
   // does not accept an effective_date property.
   const effectiveDate: string = row.effective_date ?? `${new Date().getFullYear() + 1}-01-01`;
   const planYear = Number(effectiveDate.slice(0, 4));
-  // Prescriptions live on the top-level `client` block in the live contract.
+  // Prescriptions nest on the primary applicant (see applicantPrescriptions).
   const providers = verifiedNpis(row.saved_doctors);
 
   const relationships = members.map((m, i) => normalizeRelationship(m?.relationship, i));
@@ -130,7 +134,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
     throw new Error("exactly_one_primary_required");
   }
   const primaryIndex = Math.max(0, relationships.indexOf("primary"));
-  const prescriptions = clientPrescriptions(row.saved_prescriptions, primaryIndex);
+  const prescriptions = applicantPrescriptions(row.saved_prescriptions, primaryIndex);
 
 
   const applicants = members.map((member, index) => {
@@ -146,6 +150,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
       ...(income !== null
         ? { income_sources: [{ amount: income, ...(employer ? { employer } : {}) }] }
         : {}),
+      ...(isPrimary && prescriptions.length > 0 ? { prescriptions } : {}),
       ...(isPrimary
         ? {
             first_name: contact.firstName,
@@ -183,8 +188,6 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
       household_size: Math.max(Number(row.household_size ?? applicants.length), applicants.length),
       applicants,
     },
-    ...(prescriptions.length > 0 ? { client: { prescriptions } } : {}),
-
     ...(providers.length > 0 ? { providers } : {}),
     ...(agentNote ? { notes: agentNote } : {}),
   };

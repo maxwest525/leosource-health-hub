@@ -2,43 +2,50 @@
 
 `POST https://api.one.healthsherpa.com/v1/enrollment-sessions`
 
-## Contract drift: prescriptions
+## Contract drift: prescriptions (two live observations, 2026-08-05)
 
-**Observed:** 2026-08-05, request id `6654bbdb-88b5-4080-9cb3-976fa92eb1d2`
+**Observation 1 - request id `6654bbdb-88b5-4080-9cb3-976fa92eb1d2`**
 
-An authorized non-consumer test that placed prescriptions on
-`household.applicants[].prescriptions` (the shape the published reference
-implied) was rejected with HTTP 400:
+Prescriptions sent as `household.applicants[].prescriptions` with only
+`{ rx_norm_identifier }` were rejected with HTTP 400:
 
 ```json
-{
-  "error": {
-    "code": "invalid_request",
-    "message": "Validation failed.",
-    "details": {
-      "client": [
-        "Client prescriptions must be provided in this format [{id: , duration: , applicant_index: , rx_norm_identifier: }]"
-      ]
-    }
-  }
-}
+{ "error": { "code": "invalid_request", "message": "Validation failed.",
+  "details": { "client": ["Client prescriptions must be provided in this format [{id: , duration: , applicant_index: , rx_norm_identifier: }]"] } } }
 ```
 
-The live validator requires a **top-level `client.prescriptions` array**.
-Applicant-level `prescriptions` are not sent; there is no evidence the live
-endpoint accepts both, so we do not duplicate them.
+The validator names the legacy object shape - `id`, `duration`,
+`applicant_index`, `rx_norm_identifier` - it does **not** name a container.
+
+**Observation 2 - request id `6a8ff4cb-a00e-414e-ad4c-9e840f4997df`**
+
+Moving the array to a top-level `client.prescriptions` was rejected with HTTP 400:
+`client.prescriptions: Prescriptions is not a recognized field`.
+
+**Conclusion (implemented):** prescriptions remain nested on
+`household.applicants[primaryIndex].prescriptions`, and each object carries
+`applicant_index`. A top-level `client.prescriptions` array is **not** valid.
+
+## CMS / RxNorm provenance
+
+TruEnroll prescription search goes through the CMS Marketplace gateway
+(`cms-lookup` -> `drugAutocomplete`) and returns an **RxCUI**. That value is
+emitted only as `rx_norm_identifier`. It is never labelled or copied into `id`.
+The checked-in HealthSherpa public API reference has no prescription-search
+endpoint, so `id` is reserved for a genuine HealthSherpa catalog identifier if
+one is ever obtained.
 
 ## Prescription object (live)
 
 | Field | Type | Required | Notes |
 | --- | --- | --- | --- |
-| `applicant_index` | integer | yes | Zero-based index into `household.applicants`. TruEnroll points every prescription at the primary applicant. |
+| `applicant_index` | integer | yes | Zero-based index into `household.applicants`. Legacy linkage metadata; TruEnroll points every prescription at the primary applicant. |
 | `id` | string | one of | HealthSherpa **catalog** identifier only. |
 | `rx_norm_identifier` | string (digits) | one of | CMS / RxNorm CUI. Never copied into `id`. |
 | `duration` | integer >= 0 | no | Days supply. Emitted only when the saved record carries a real, nonnegative integer value; never invented. |
 
 Provenance rules implemented in `hs-body.ts` (`verifiedPrescriptions`,
-`clientPrescriptions`):
+`applicantPrescriptions`):
 
 - explicit catalog markers (`hs_id`, `medication_id`, `id_type: "healthsherpa"`) -> `id`
 - explicit RxNorm markers (`rxcui`, `rxnorm_id`, `id_type: "rxnorm" | "rxcui"`) -> `rx_norm_identifier`
@@ -61,10 +68,10 @@ Provenance rules implemented in `hs-body.ts` (`verifiedPrescriptions`,
     "applicants": [
       { "relationship": "primary", "date_of_birth": "1980-05-04", "sex": "female",
         "uses_tobacco": false, "income_sources": [{ "amount": 42000 }],
+        "prescriptions": [{ "rx_norm_identifier": "617310", "applicant_index": 0 }],
         "first_name": "…", "last_name": "…", "email": "…", "phone_number": "…" }
     ]
   },
-  "client": { "prescriptions": [{ "rx_norm_identifier": "617310", "applicant_index": 0 }] },
   "providers": ["1234567893"],
   "notes": "<= 500 characters"
 }
