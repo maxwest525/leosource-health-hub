@@ -132,6 +132,12 @@ const AgentReview = () => {
 
   const handleHandoff = async (regenerate: boolean): Promise<void> => {
     if (!selected) return;
+    if ((selected.agentNote?.length ?? 0) > AGENT_NOTE_MAX) {
+      toast.error(
+        `The stored agent note is ${selected.agentNote?.length} characters. Replace it with ${AGENT_NOTE_MAX} characters or fewer first.`,
+      );
+      return;
+    }
     setBusy(true);
     try {
       const result = await createHandoff(selected.id, { regenerate, agentNote: selected.agentNote ?? undefined });
