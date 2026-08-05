@@ -1328,7 +1328,11 @@ const ComparePlans = () => {
       setCheckDoctors(true);
     }
     if (enrollment.savedPrescriptions.length > 0) {
-      setSavedRx(enrollment.savedPrescriptions.map(r => ({ rxcui: r.id, name: r.name })));
+      setSavedRx(
+        enrollment.savedPrescriptions
+          .map(r => ({ rxcui: prescriptionRxcui(r) ?? "", name: r.name }))
+          .filter(d => d.rxcui !== ""),
+      );
       setCheckRx(true);
     }
   }, [sessionReady, enrollment]);
