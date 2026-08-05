@@ -98,8 +98,7 @@ export const clientPrescriptions = (rx: unknown, applicantIndex: number): Client
   });
 };
 
-  return [...out.values()];
-};
+
 
 
 const RELATIONSHIPS = new Set(["primary", "spouse", "dependent"]);
