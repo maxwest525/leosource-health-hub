@@ -18,6 +18,9 @@ import {
 } from "@/lib/agent-review";
 import { validateEnrollmentSession, type ValidationIssue } from "@/lib/enrollment-validation";
 
+/** Mirrors the HealthSherpa agent-note contract enforced by the backend. */
+const AGENT_NOTE_MAX = 500;
+
 const STATUS_STYLE: Record<ReviewStatus, string> = {
   intake_in_progress: "bg-slate-100 text-slate-600 border-slate-200",
   awaiting_agent_review: "bg-amber-100 text-amber-700 border-amber-200",
