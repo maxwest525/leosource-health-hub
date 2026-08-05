@@ -10,6 +10,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3.23.8";
 
+import { AGENT_NOTE_MAX, buildHandoffBody } from "./hs-body.ts";
+import { findApplication, mapPolicySummary } from "./hs-reconcile.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -23,7 +26,9 @@ const requestSchema = z.discriminatedUnion("action", [
     action: z.literal("create_handoff"),
     session_id: z.string().uuid(),
     regenerate: z.boolean().default(false),
-    agent_note: z.string().max(2000).optional(),
+    // Hard boundary: the upstream contract allows at most 500 characters and we
+    // never silently truncate an accepted agent note.
+    agent_note: z.string().max(AGENT_NOTE_MAX).optional(),
     locale: z.enum(["en", "es"]).default("en"),
   }),
   z.object({ action: z.literal("mark_opened"), session_id: z.string().uuid() }),
@@ -38,18 +43,14 @@ const json = (body: unknown, status = 200) =>
 
 const fail = (code: string, message: string, status = 400) => json({ error: { code, message } }, status);
 
-type SessionRow = Record<string, any>;
-
-import { buildHandoffBody } from "./hs-body.ts";
-
 const UNKNOWN_STATUS = {
   application_status: "unknown",
   policy_status: "unknown",
   payment_status: "unknown",
   effective_date: null as string | null,
   paid_through_date: null as string | null,
-  balance: null as string | null,
-  past_due_balance: null as string | null,
+  current_balance_cents: null as number | null,
+  past_due_balance_cents: null as number | null,
   grace_period: null as string | null,
   last_status_update: null as string | null,
 };
@@ -85,7 +86,11 @@ Deno.serve(async (req) => {
   try {
     parsed = requestSchema.parse(await req.json());
   } catch {
-    return fail("invalid_request", "That request was missing or had invalid fields.", 400);
+    return fail(
+      "invalid_request",
+      `That request was missing or had invalid fields. Agent notes must be ${AGENT_NOTE_MAX} characters or fewer.`,
+      400,
+    );
   }
 
   const admin = createClient(supabaseUrl, serviceKey);
@@ -134,53 +139,62 @@ Deno.serve(async (req) => {
 
   /* ---------------- create_handoff ---------------- */
   if (parsed.action === "create_handoff") {
-    if (row.handoff_status === "created" && !parsed.regenerate) {
-      return json({
-        data: {
-          already_created: true,
-          shopping_url: row.healthsherpa_shopping_url,
-          client_apply_url: row.healthsherpa_client_apply_url,
-        },
-      });
-    }
-    if (row.status !== "agent_approved" && !(parsed.regenerate && row.handoff_status === "created")) {
-      return fail("not_approved", "The case must be agent-approved before a handoff can be created.", 409);
+    // Atomic, NULL-inclusive claim inside a single row-locked transaction.
+    const { data: claimData, error: claimError } = await admin.rpc("claim_handoff", {
+      _session_id: row.id,
+      _actor: actor,
+      _external_id: `truenroll-${row.id}`,
+      _idempotency_key: crypto.randomUUID(),
+      _regenerate: parsed.regenerate,
+    });
+    if (claimError) return fail("claim_failed", "Could not reserve this handoff. Try again.", 500);
+
+    const claim = (claimData ?? {}) as Record<string, any>;
+    switch (claim.result) {
+      case "not_found":
+        return fail("not_found", "That enrollment session no longer exists.", 404);
+      case "not_assigned":
+        return fail("not_assigned", "Only the agent assigned to this case can run this action.", 403);
+      case "in_progress":
+        return fail("in_progress", "A handoff request for this case is already in flight.", 409);
+      case "already_created":
+        return json({
+          data: {
+            already_created: true,
+            shopping_url: claim.shopping_url,
+            client_apply_url: claim.client_apply_url,
+          },
+        });
+      case "not_approved":
+        return fail("not_approved", "The case must be agent-approved before a handoff can be created.", 409);
     }
 
-    const externalId = row.external_id ?? `truenroll-${row.id}`;
-    // A normal retry reuses the stored idempotency key; only an explicit
-    // regeneration mints a new one.
-    const idempotencyKey = parsed.regenerate
-      ? crypto.randomUUID()
-      : (row.handoff_idempotency_key ?? crypto.randomUUID());
-
-    // Concurrency guard: only one caller may move the row out of its current
-    // handoff state into "requested".
-    const { data: claimed } = await admin
-      .from("enrollment_sessions")
-      .update({ external_id: externalId, handoff_idempotency_key: idempotencyKey, handoff_status: "requested" })
-      .eq("id", row.id)
-      .not("handoff_status", "eq", "requested")
-      .select("id");
-    if (!claimed?.length) {
-      return fail("in_progress", "A handoff request for this case is already in flight.", 409);
-    }
+    const externalId: string = claim.external_id;
+    const idempotencyKey: string = claim.idempotency_key;
+    const previousHandoffStatus: string | null = claim.previous_handoff_status ?? null;
     await logEvent("handoff_requested", { regenerate: parsed.regenerate });
-
-    const body = buildHandoffBody(
-      { ...row, external_id: externalId },
-      parsed.locale,
-      parsed.agent_note ?? row.agent_note ?? undefined,
-    );
 
     const restore = async (reason: string, detail: Record<string, unknown>) => {
       // Preserve the last known good handoff information on failure.
       await admin
         .from("enrollment_sessions")
-        .update({ handoff_status: row.handoff_status === "created" ? "created" : "error" })
+        .update({ handoff_status: previousHandoffStatus === "created" ? "created" : "error" })
         .eq("id", row.id);
       await logEvent("handoff_error", { reason, ...detail });
     };
+
+    let body: ReturnType<typeof buildHandoffBody>;
+    try {
+      body = buildHandoffBody(
+        { ...row, external_id: externalId },
+        parsed.locale,
+        parsed.agent_note ?? row.agent_note ?? undefined,
+      );
+    } catch (e) {
+      const reason = e instanceof Error ? e.message : "invalid_session";
+      await restore("invalid_body", { reason });
+      return fail("invalid_session", `This case cannot be sent to HealthSherpa: ${reason}.`, 422);
+    }
 
     let upstream: Response;
     try {
@@ -245,23 +259,24 @@ Deno.serve(async (req) => {
   const externalId = row.external_id ?? "";
   const planYear = Number(String(row.effective_date ?? "").slice(0, 4)) || new Date().getFullYear();
 
-  // 1. GET /v1/policy-status/applications  (paginated)
-  let matched: any = null;
-  let listReachable = false;
-  for (let page = 1; page <= 20 && !matched; page += 1) {
-    const listPayload = await safeGet(
-      `/v1/policy-status/applications?exchange=on_exchange&plan_year=${planYear}&page=${page}&per_page=100`,
-    );
-    if (!listPayload) break;
-    listReachable = true;
-    const list: any[] = listPayload?.applications ?? listPayload?.data?.applications ?? listPayload?.data ?? [];
-    if (!Array.isArray(list) || list.length === 0) break;
-    matched = list.find((a) => String(a?.external_id ?? "") === externalId && externalId !== "") ?? null;
-    const meta = listPayload?.meta ?? listPayload?.pagination ?? {};
-    const totalPages = Number(meta.total_pages ?? meta.pages ?? 0);
-    if (totalPages && page >= totalPages) break;
-    if (!totalPages && list.length < 100) break;
+  // 1. GET /v1/policy-status/applications  (limit/offset pagination)
+  const listResult = await findApplication(safeGet, { externalId, planYear });
+
+  if (listResult.outcome === "incomplete") {
+    // Explicit incomplete-reconciliation error; prior stored status is preserved.
+    await admin
+      .from("enrollment_sessions")
+      .update({
+        last_reconciliation_attempt_at: attemptedAt,
+        reconciliation_error: `Reconciliation was incomplete after scanning ${listResult.scanned} applications.`,
+      })
+      .eq("id", row.id);
+    await logEvent("reconciliation_incomplete", { scanned: listResult.scanned });
+    return fail("reconciliation_incomplete", "HealthSherpa pagination did not complete. Try again.", 502);
   }
+
+  const matched = listResult.outcome === "found" ? listResult.application : null;
+  const listReachable = listResult.outcome !== "unreachable";
 
   const confirmationId = matched?.confirmation_id ?? row.healthsherpa_confirmation_id ?? null;
   if (matched) await logEvent("application_matched", { has_confirmation_id: Boolean(confirmationId) });
@@ -280,28 +295,13 @@ Deno.serve(async (req) => {
       : [];
   const s = rawStatuses[0] ?? null;
 
-  const nullable = (value: unknown): string | null =>
-    typeof value === "string" && value !== "" ? value : typeof value === "number" ? String(value) : null;
-  const known = (value: unknown): string => nullable(value) ?? "unknown";
-
   const previous = (row.policy_status ?? {}) as Record<string, unknown>;
   const policyStatus = s
-    ? {
-        application_status: known(s.application_status ?? matched?.status),
-        policy_status: known(s.policy_status ?? s.status),
-        payment_status: known(s.payment_status),
-        effective_date: nullable(s.effective_date),
-        paid_through_date: nullable(s.paid_through_date),
-        balance: nullable(s.current_balance ?? s.balance),
-        past_due_balance: nullable(s.past_due_balance),
-        grace_period: nullable(s.grace_period_start_date ?? s.grace_period),
-        last_status_update: nullable(s.updated_at) ?? attemptedAt,
-        raw_policy_statuses: rawStatuses,
-      }
+    ? mapPolicySummary(s, matched, attemptedAt, rawStatuses)
     : {
         ...UNKNOWN_STATUS,
         ...previous,
-        application_status: known(matched?.status ?? previous.application_status),
+        application_status: String(matched?.status ?? previous.application_status ?? "unknown"),
         last_status_update: attemptedAt,
       };
 

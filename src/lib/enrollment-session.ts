@@ -72,9 +72,12 @@ export type PolicyStatus = {
   policy_status: string;
   payment_status: string;
   effective_date: string | null;
-  balance: string | null;
+  /** Documented HealthSherpa balances are reported in cents. */
+  current_balance_cents: number | null;
+  past_due_balance_cents: number | null;
   grace_period: string | null;
 };
+
 
 export type EnrollmentSession = {
   id: string;
@@ -160,7 +163,8 @@ const UNKNOWN_STATUS: PolicyStatus = {
   policy_status: "unknown",
   payment_status: "unknown",
   effective_date: null,
-  balance: null,
+  current_balance_cents: null,
+  past_due_balance_cents: null,
   grace_period: null,
 };
 
@@ -171,15 +175,19 @@ const toPolicyStatus = (value: unknown): PolicyStatus => {
     typeof record[key] === "string" && record[key] !== "" ? (record[key] as string) : "unknown";
   const nullable = (key: keyof PolicyStatus): string | null =>
     typeof record[key] === "string" ? (record[key] as string) : null;
+  const cents = (key: keyof PolicyStatus): number | null =>
+    typeof record[key] === "number" ? (record[key] as number) : null;
   return {
     application_status: str("application_status"),
     policy_status: str("policy_status"),
     payment_status: str("payment_status"),
     effective_date: nullable("effective_date"),
-    balance: nullable("balance"),
+    current_balance_cents: cents("current_balance_cents"),
+    past_due_balance_cents: cents("past_due_balance_cents"),
     grace_period: nullable("grace_period"),
   };
 };
+
 
 type SessionRow = Record<string, unknown>;
 

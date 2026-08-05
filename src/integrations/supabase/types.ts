@@ -1576,6 +1576,16 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_handoff: {
+        Args: {
+          _actor: string
+          _external_id: string
+          _idempotency_key: string
+          _regenerate?: boolean
+          _session_id: string
+        }
+        Returns: Json
+      }
       current_actor: { Args: never; Returns: string }
       enrollment_correction_paths: { Args: never; Returns: string[] }
       get_enrollment_session: {
