@@ -154,8 +154,8 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
             ...(contact.phone ? { phone_number: digits(contact.phone) } : {}),
           }
         : {}),
-      };
     };
+
   });
 
   if (agentNote && agentNote.length > AGENT_NOTE_MAX) {
