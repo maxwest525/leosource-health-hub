@@ -183,6 +183,8 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
       household_size: Math.max(Number(row.household_size ?? applicants.length), applicants.length),
       applicants,
     },
+    ...(prescriptions.length > 0 ? { client: { prescriptions } } : {}),
+
     ...(providers.length > 0 ? { providers } : {}),
     ...(agentNote ? { notes: agentNote } : {}),
   };
