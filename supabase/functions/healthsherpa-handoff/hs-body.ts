@@ -154,7 +154,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
             ...(contact.phone ? { phone_number: digits(contact.phone) } : {}),
           }
         : {}),
-      ...(isPrimary && prescriptions.length > 0 ? { prescriptions } : {}),
+      };
     };
   });
 
