@@ -148,6 +148,8 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
       ...(income !== null
         ? { income_sources: [{ amount: income, ...(employer ? { employer } : {}) }] }
         : {}),
+      ...(isPrimary && prescriptions.length > 0 ? { prescriptions } : {}),
+
       
       ...(isPrimary
         ? {
