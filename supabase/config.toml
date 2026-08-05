@@ -1,1 +1,3 @@
 project_id = "kztnypomlwmeqrogksky"
+[functions.healthsherpa-handoff]
+verify_jwt = true

@@ -1577,6 +1577,7 @@ export type Database = {
         }
       }
       current_actor: { Args: never; Returns: string }
+      enrollment_correction_paths: { Args: never; Returns: string[] }
       get_enrollment_session: {
         Args: { _public_token: string }
         Returns: {
@@ -1698,6 +1699,10 @@ export type Database = {
           id: string
           public_token: string
         }[]
+      }
+      validate_enrollment_session_row: {
+        Args: { s: Database["public"]["Tables"]["enrollment_sessions"]["Row"] }
+        Returns: string[]
       }
     }
     Enums: {
