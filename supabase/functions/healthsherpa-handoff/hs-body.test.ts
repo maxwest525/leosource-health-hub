@@ -124,3 +124,41 @@ Deno.test("omits empty optional blocks", () => {
   assert(!("notes" in b));
   assertEquals(b.context.locale, "en-US");
 });
+
+/* --- Integration shapes: exactly what FindPrescriptions / ComparePlans persist --- */
+
+Deno.test("FindPrescriptions saved shape keeps RxNorm provenance", () => {
+  // rxNormPrescription(drug.rxcui, drug.name, drug.strength)
+  const saved = [{ id: "617314", id_type: "rxnorm", rxcui: "617314", name: "Atorvastatin", dosage: "20 mg" }];
+  assertEquals(verifiedPrescriptions(saved), [{ rx_norm_identifier: "617314" }]);
+
+  const b = buildHandoffBody({ ...row, saved_prescriptions: saved }, "en") as any;
+  assertEquals(b.household.applicants[0].prescriptions, [{ rx_norm_identifier: "617314" }]);
+});
+
+Deno.test("ComparePlans saved shape keeps RxNorm provenance", () => {
+  const saved = [{ id: "83367", id_type: "rxnorm", rxcui: "83367", name: "Metformin HCl 500 mg" }];
+  assertEquals(verifiedPrescriptions(saved), [{ rx_norm_identifier: "83367" }]);
+});
+
+Deno.test("legacy bare all-digit ids are treated as RxNorm", () => {
+  assertEquals(verifiedPrescriptions([{ id: "617314", name: "Atorvastatin" }]), [
+    { rx_norm_identifier: "617314" },
+  ]);
+});
+
+Deno.test("explicit HealthSherpa catalog ids are never reinterpreted", () => {
+  assertEquals(
+    verifiedPrescriptions([
+      { id: "998877", id_type: "healthsherpa", name: "HS catalog drug" },
+      { hs_id: "112233", name: "HS catalog drug 2" },
+      { id: "hs_555" },
+    ]),
+    [{ id: "998877" }, { id: "112233" }, { id: "hs_555" }],
+  );
+});
+
+Deno.test("a corrected replacement note permits handoff body construction", () => {
+  const b = buildHandoffBody(row, "en", "Verified income documents on file.") as any;
+  assertEquals(b.notes, "Verified income documents on file.");
+});
