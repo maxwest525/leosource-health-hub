@@ -105,7 +105,9 @@ export const mapReviewRow = (row: Row): ReviewRecord => ({
     policy_status: "unknown",
     payment_status: "unknown",
     effective_date: null,
-    balance: null,
+    current_balance_cents: null,
+    past_due_balance_cents: null,
+
     grace_period: null,
   },
   correctionNote: (row.correction_note as string) ?? null,
