@@ -132,7 +132,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
     throw new Error("exactly_one_primary_required");
   }
   const primaryIndex = Math.max(0, relationships.indexOf("primary"));
-  const prescriptions = topLevelPrescriptions(row.saved_prescriptions, primaryIndex);
+  const prescriptions = applicantPrescriptions(row.saved_prescriptions);
 
 
   const applicants = members.map((member, index) => {
