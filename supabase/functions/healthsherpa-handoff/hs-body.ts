@@ -58,7 +58,7 @@ export const verifiedPrescriptions = (rx: unknown): PrescriptionRef[] => {
   return [...out.values()];
 };
 
-export type ApplicantPrescription = PrescriptionRef & {
+export type TopLevelPrescription = PrescriptionRef & {
   applicant_index: number;
   duration?: number;
 };
@@ -72,16 +72,20 @@ const savedDuration = (raw: Record<string, unknown>): number | undefined => {
 };
 
 /**
- * Live contract, established by two observations:
- *  - 6654bbdb-88b5-4080-9cb3-976fa92eb1d2 (2026-08-05): objects must carry the
- *    legacy `{ id, duration, applicant_index, rx_norm_identifier }` linkage shape.
- *  - 6a8ff4cb-a00e-414e-ad4c-9e840f4997df (2026-08-05): a top-level
- *    `client.prescriptions` array is rejected - "Prescriptions is not a recognized field".
- * Therefore prescriptions stay nested on the primary applicant and each object
- * carries `applicant_index`. `duration` is emitted only when the saved row
- * carries a real days-supply value.
+ * Live contract, established by three authorized non-consumer observations
+ * (all 2026-08-05):
+ *  - 6654bbdb-88b5-4080-9cb3-976fa92eb1d2: objects must carry the legacy
+ *    `{ id, duration, applicant_index, rx_norm_identifier }` linkage shape.
+ *  - 6a8ff4cb-a00e-414e-ad4c-9e840f4997df: `client.prescriptions` is rejected -
+ *    "Prescriptions is not a recognized field".
+ *  - e6a8a9b1-6d87-4ffd-84ae-cf6bb9fc06b1: `applicant_index` inside
+ *    `household.applicants[].prescriptions[]` is rejected -
+ *    "Applicant index is not a recognized field".
+ * Therefore prescriptions are emitted as a TOP-LEVEL `prescriptions` array,
+ * sibling of `client`, `household`, `providers` and `notes`, each object
+ * carrying `applicant_index`. `duration` only when the saved row has one.
  */
-export const applicantPrescriptions = (rx: unknown, applicantIndex: number): ApplicantPrescription[] => {
+export const topLevelPrescriptions = (rx: unknown, applicantIndex: number): TopLevelPrescription[] => {
   const refs = verifiedPrescriptions(rx);
   const durations = new Map<string, number>();
   if (Array.isArray(rx)) {
@@ -101,6 +105,7 @@ export const applicantPrescriptions = (rx: unknown, applicantIndex: number): App
     return { ...ref, applicant_index: applicantIndex, ...(duration !== undefined ? { duration } : {}) };
   });
 };
+
 
 
 
@@ -125,7 +130,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
   // does not accept an effective_date property.
   const effectiveDate: string = row.effective_date ?? `${new Date().getFullYear() + 1}-01-01`;
   const planYear = Number(effectiveDate.slice(0, 4));
-  // Prescriptions nest on the primary applicant (see applicantPrescriptions).
+  // Prescriptions are emitted top-level (see topLevelPrescriptions).
   const providers = verifiedNpis(row.saved_doctors);
 
   const relationships = members.map((m, i) => normalizeRelationship(m?.relationship, i));
@@ -134,7 +139,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
     throw new Error("exactly_one_primary_required");
   }
   const primaryIndex = Math.max(0, relationships.indexOf("primary"));
-  const prescriptions = applicantPrescriptions(row.saved_prescriptions, primaryIndex);
+  const prescriptions = topLevelPrescriptions(row.saved_prescriptions, primaryIndex);
 
 
   const applicants = members.map((member, index) => {
@@ -150,7 +155,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
       ...(income !== null
         ? { income_sources: [{ amount: income, ...(employer ? { employer } : {}) }] }
         : {}),
-      ...(isPrimary && prescriptions.length > 0 ? { prescriptions } : {}),
+      
       ...(isPrimary
         ? {
             first_name: contact.firstName,
@@ -188,6 +193,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
       household_size: Math.max(Number(row.household_size ?? applicants.length), applicants.length),
       applicants,
     },
+    ...(prescriptions.length > 0 ? { prescriptions } : {}),
     ...(providers.length > 0 ? { providers } : {}),
     ...(agentNote ? { notes: agentNote } : {}),
   };
