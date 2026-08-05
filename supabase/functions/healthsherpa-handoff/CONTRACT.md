@@ -1,13 +1,35 @@
-# HealthSherpa prescription handling: documented shapes, live rejections, blockers
+# HealthSherpa prescription handling: intentional omission, documented shapes, blockers
+
+## 0. Decision: prescriptions are intentionally omitted from the handoff
+
+`saved_prescriptions` is an **optional TruEnroll household-planning aid**. It is
+**intentionally ignored** by `buildHandoffBody`: **no prescription field is
+emitted anywhere** in the HealthSherpa `/v1/enrollment-sessions` request — not
+nested on an applicant, not at the top level, not under a `client` block.
+
+This omission is deliberate, not a gap:
+
+- No prescription placement has ever been accepted by `/v1/enrollment-sessions`
+  (section 2). Emitting one only causes HTTP 400s.
+- The only documented prescription path is the Intake Forms endpoint
+  (section 3), whose credentials are not available (section 4).
+- Prescriptions never affect eligibility, subsidy, or the plans a household can
+  enroll in; they only decorate a shopping deeplink on the unimplemented Intake
+  path. Dropping them is lossless for the enrollment handoff.
+
+**No live HealthSherpa request is required to validate this behaviour.** The
+omission is verified purely by the unit assertions in `hs-body.test.ts`
+(`assertNoPrescriptionsAnywhere`, and the deep-equality check that a row with a
+populated `saved_prescriptions` array produces a byte-identical payload to the
+same row with an empty array). All prescription-shaping code and exports have
+been removed from `hs-body.ts`.
 
 ## 1. Documented `/v1/enrollment-sessions` request shape (implemented)
 
 `POST https://api.one.healthsherpa.com/v1/enrollment-sessions`
 
-The checked-in OpenAPI reference nests prescriptions on the applicant they
-belong to. Each object carries only its own documented identifier plus an
-optional integer `duration`. There is no `applicant_index`, no top-level
-`prescriptions` array, and no `client.prescriptions` container.
+The builder emits the closed household shape below. It carries **no
+prescription field** by design (section 0).
 
 ```jsonc
 {
@@ -22,8 +44,7 @@ optional integer `duration`. There is no `applicant_index`, no top-level
     "applicants": [
       { "relationship": "primary", "date_of_birth": "1980-05-04", "sex": "female",
         "uses_tobacco": false, "income_sources": [{ "amount": 42000 }],
-        "first_name": "…", "last_name": "…", "email": "…", "phone_number": "…",
-        "prescriptions": [{ "rx_norm_identifier": "617310" }] }
+        "first_name": "…", "last_name": "…", "email": "…", "phone_number": "…" }
     ]
   },
   "providers": ["1234567893"],
@@ -31,31 +52,14 @@ optional integer `duration`. There is no `applicant_index`, no top-level
 }
 ```
 
-### Prescription object (nested on the primary applicant)
-
-| Field | Type | Required | Notes |
-| --- | --- | --- | --- |
-| `id` | string | one of | HealthSherpa **catalog** identifier only. |
-| `rx_norm_identifier` | string (digits) | one of | CMS / RxNorm CUI. Never copied into `id`. |
-| `duration` | integer >= 0 | no | Emitted only when the saved record carries a real nonnegative integer; never invented. |
-
-Provenance rules implemented in `hs-body.ts` (`verifiedPrescriptions`,
-`applicantPrescriptions`):
-
-- explicit catalog markers (`hs_id`, `medication_id`, `id_type: "healthsherpa"`) -> `id`
-- explicit RxNorm markers (`rxcui`, `rxnorm_id`, `id_type: "rxnorm" | "rxcui"`) -> `rx_norm_identifier`
-- legacy bare all-digit `id` with no provenance -> `rx_norm_identifier`
-  (HealthSherpa catalog ids are never bare digits)
-- manual / unverified / unresolved rows are dropped
-
-TruEnroll prescription search goes through the CMS Marketplace gateway
-(`cms-lookup` -> `drugAutocomplete`) and returns an **RxCUI**. That value is
-emitted only as `rx_norm_identifier`.
+There is no `prescriptions` key on any applicant, no top-level `prescriptions`
+array, and no `client.prescriptions` container.
 
 ## 2. Live rejections on `/v1/enrollment-sessions` (2026-08-05)
 
 Four authorized non-consumer validation requests. **No prescription placement
-has ever been accepted by `/v1/enrollment-sessions`.**
+has ever been accepted by `/v1/enrollment-sessions`.** These historical results
+are why prescriptions are omitted; no further live probing is needed.
 
 | Request ID | Placement attempted | Validator response |
 | --- | --- | --- |
@@ -69,8 +73,8 @@ prescription schema (section 3), not an `/v1/enrollment-sessions` field set.
 The official on-exchange documentation does not document prescription handoff
 through `/v1/enrollment-sessions` at all.
 
-Current behaviour: the builder emits the documented nested shape. All
-experimental placements have been removed and are guarded by regression
+Current behaviour: the builder emits no prescription field at all. All
+placements have been removed and the omission is guarded by regression
 assertions in `hs-body.test.ts`.
 
 ## 3. Documented prescription path: HealthSherpa Intake Forms (not implemented)
@@ -110,9 +114,10 @@ its prerequisites are configured:
 - no staging Basic Auth credentials
 - no HealthSherpa-issued test-agent credentials
 
-Once HealthSherpa issues these, the prescription path moves to
-`/external/intake_forms` with the four-string object above, and
-`/v1/enrollment-sessions` continues to carry the documented nested shape.
+Until HealthSherpa issues these, prescriptions remain omitted from the handoff
+(section 0). If and when the Intake path is enabled, prescription shaping would
+live against `/external/intake_forms` with the four-string object above, while
+`/v1/enrollment-sessions` continues to carry no prescription field.
 
 ## 5. Unchanged elsewhere
 
