@@ -72,9 +72,12 @@ export type PolicyStatus = {
   policy_status: string;
   payment_status: string;
   effective_date: string | null;
-  balance: string | null;
+  /** Documented HealthSherpa balances are reported in cents. */
+  current_balance_cents: number | null;
+  past_due_balance_cents: number | null;
   grace_period: string | null;
 };
+
 
 export type EnrollmentSession = {
   id: string;
