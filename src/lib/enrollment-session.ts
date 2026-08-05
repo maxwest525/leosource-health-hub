@@ -54,7 +54,38 @@ export type SavedPrescription = {
   name: string;
   dosage?: string;
   isGeneric?: boolean;
+  /** Explicit provenance for the identifier in `id`. */
+  id_type?: "rxnorm" | "rxcui" | "healthsherpa";
+  /** CMS / RxNorm concept id, when the drug came from the CMS drug search. */
+  rxcui?: string;
+  /** HealthSherpa catalog identifier, when the drug came from HealthSherpa. */
+  hs_id?: string;
 };
+
+/** Builds a CMS/RxNorm-sourced prescription with explicit provenance. */
+export const rxNormPrescription = (
+  rxcui: string,
+  name: string,
+  dosage?: string,
+): SavedPrescription => ({
+  id: rxcui,
+  id_type: "rxnorm",
+  rxcui,
+  name,
+  ...(dosage ? { dosage } : {}),
+});
+
+/**
+ * Reads the RxNorm CUI back out of a saved prescription.
+ * Legacy rows saved before provenance existed carry a bare all-digit `id`,
+ * which only the CMS drug search ever produced.
+ */
+export const prescriptionRxcui = (r: SavedPrescription): string | undefined =>
+  r.rxcui ??
+  (r as { rx_norm_identifier?: string }).rx_norm_identifier ??
+  (r.id_type === "rxnorm" || r.id_type === "rxcui" ? r.id : undefined) ??
+  (!r.id_type && !r.hs_id && /^\d+$/.test(r.id ?? "") ? r.id : undefined);
+
 
 export type SelectedPlan = {
   planId: string;
