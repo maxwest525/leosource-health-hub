@@ -139,6 +139,16 @@ Deno.serve(async (req) => {
 
   /* ---------------- create_handoff ---------------- */
   if (parsed.action === "create_handoff") {
+    // Preflight the note that will actually be sent, before any claim, so a
+    // legacy over-limit stored note never leaves handoff_status changed.
+    const effectiveNote = parsed.agent_note ?? row.agent_note ?? "";
+    if (effectiveNote.length > AGENT_NOTE_MAX) {
+      return fail(
+        "agent_note_too_long",
+        `The stored agent note is ${effectiveNote.length} characters. Replace it with ${AGENT_NOTE_MAX} characters or fewer before creating the handoff.`,
+        422,
+      );
+    }
     // Atomic, NULL-inclusive claim inside a single row-locked transaction.
     const { data: claimData, error: claimError } = await admin.rpc("claim_handoff", {
       _session_id: row.id,
