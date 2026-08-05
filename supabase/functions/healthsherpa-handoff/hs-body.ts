@@ -130,7 +130,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
   // does not accept an effective_date property.
   const effectiveDate: string = row.effective_date ?? `${new Date().getFullYear() + 1}-01-01`;
   const planYear = Number(effectiveDate.slice(0, 4));
-  // Prescriptions nest on the primary applicant (see applicantPrescriptions).
+  // Prescriptions are emitted top-level (see topLevelPrescriptions).
   const providers = verifiedNpis(row.saved_doctors);
 
   const relationships = members.map((m, i) => normalizeRelationship(m?.relationship, i));
@@ -139,7 +139,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
     throw new Error("exactly_one_primary_required");
   }
   const primaryIndex = Math.max(0, relationships.indexOf("primary"));
-  const prescriptions = applicantPrescriptions(row.saved_prescriptions, primaryIndex);
+  const prescriptions = topLevelPrescriptions(row.saved_prescriptions, primaryIndex);
 
 
   const applicants = members.map((member, index) => {
@@ -155,7 +155,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
       ...(income !== null
         ? { income_sources: [{ amount: income, ...(employer ? { employer } : {}) }] }
         : {}),
-      ...(isPrimary && prescriptions.length > 0 ? { prescriptions } : {}),
+      
       ...(isPrimary
         ? {
             first_name: contact.firstName,
@@ -193,6 +193,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
       household_size: Math.max(Number(row.household_size ?? applicants.length), applicants.length),
       applicants,
     },
+    ...(prescriptions.length > 0 ? { prescriptions } : {}),
     ...(providers.length > 0 ? { providers } : {}),
     ...(agentNote ? { notes: agentNote } : {}),
   };
