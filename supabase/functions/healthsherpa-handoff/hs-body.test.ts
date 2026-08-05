@@ -1,5 +1,11 @@
 import { assert, assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { AGENT_NOTE_MAX, buildHandoffBody, normalizeRelationship, verifiedPrescriptions } from "./hs-body.ts";
+import {
+  AGENT_NOTE_MAX,
+  buildHandoffBody,
+  clientPrescriptions,
+  normalizeRelationship,
+  verifiedPrescriptions,
+} from "./hs-body.ts";
 
 const row = {
   external_id: "truenroll-abc",
@@ -42,8 +48,9 @@ Deno.test("agent-assisted contract", () => {
   assertEquals(p.date_of_birth, "1980-05-04");
   assertEquals(p.first_name, "Ada");
   assertEquals(p.phone_number, "3055550142");
-  assertEquals(p.prescriptions, [{ id: "hs_9911" }]);
+  assert(!("prescriptions" in p), "prescriptions are not duplicated on applicants");
   assert(!("prescriptions" in spouse));
+  assertEquals(b.client.prescriptions, [{ id: "hs_9911", applicant_index: 0 }]);
   assert(!("first_name" in spouse));
 
   assertEquals(b.providers, ["1234567893"]);
@@ -120,6 +127,7 @@ Deno.test("agent notes over the contract maximum are rejected, never truncated",
 Deno.test("omits empty optional blocks", () => {
   const b = buildHandoffBody({ ...row, saved_doctors: [], saved_prescriptions: [{ manual: true, name: "x" }] }, "en") as any;
   assert(!("providers" in b));
+  assert(!("client" in b));
   assert(!("prescriptions" in b.household.applicants[0]));
   assert(!("notes" in b));
   assertEquals(b.context.locale, "en-US");
@@ -133,7 +141,8 @@ Deno.test("FindPrescriptions saved shape keeps RxNorm provenance", () => {
   assertEquals(verifiedPrescriptions(saved), [{ rx_norm_identifier: "617314" }]);
 
   const b = buildHandoffBody({ ...row, saved_prescriptions: saved }, "en") as any;
-  assertEquals(b.household.applicants[0].prescriptions, [{ rx_norm_identifier: "617314" }]);
+  assertEquals(b.client.prescriptions, [{ rx_norm_identifier: "617314", applicant_index: 0 }]);
+  assert(!("prescriptions" in b.household.applicants[0]));
 });
 
 Deno.test("ComparePlans saved shape keeps RxNorm provenance", () => {
@@ -161,4 +170,50 @@ Deno.test("explicit HealthSherpa catalog ids are never reinterpreted", () => {
 Deno.test("a corrected replacement note permits handoff body construction", () => {
   const b = buildHandoffBody(row, "en", "Verified income documents on file.") as any;
   assertEquals(b.notes, "Verified income documents on file.");
+});
+
+/* --- Live client.prescriptions contract (drift observed 2026-08-05) --- */
+
+Deno.test("client.prescriptions carries applicant_index for the primary applicant", () => {
+  const b = buildHandoffBody(
+    { ...row, saved_prescriptions: [{ id: "617310", id_type: "rxnorm", rxcui: "617310", name: "Atorvastatin" }] },
+    "en",
+  ) as any;
+  assertEquals(b.client.prescriptions, [{ rx_norm_identifier: "617310", applicant_index: 0 }]);
+  for (const a of b.household.applicants) assert(!("prescriptions" in a));
+});
+
+Deno.test("catalog ids stay in id and RxNorm CUIs never leak into id", () => {
+  const out = clientPrescriptions([{ hs_id: "hs_9911" }, { rxcui: "617310" }], 0);
+  assertEquals(out, [
+    { id: "hs_9911", applicant_index: 0 },
+    { rx_norm_identifier: "617310", applicant_index: 0 },
+  ]);
+});
+
+Deno.test("duration is emitted only for a valid nonnegative days supply", () => {
+  assertEquals(clientPrescriptions([{ rxcui: "617310", days_supply: 30 }], 0), [
+    { rx_norm_identifier: "617310", applicant_index: 0, duration: 30 },
+  ]);
+  assertEquals(clientPrescriptions([{ rxcui: "617310", days_supply: -5 }], 0), [
+    { rx_norm_identifier: "617310", applicant_index: 0 },
+  ]);
+  assertEquals(clientPrescriptions([{ rxcui: "617310" }], 0), [
+    { rx_norm_identifier: "617310", applicant_index: 0 },
+  ]);
+});
+
+Deno.test("applicant_index follows the primary applicant position", () => {
+  const b = buildHandoffBody(
+    {
+      ...row,
+      members: [
+        { relationship: "spouse", dob: "1982-02-02" },
+        { relationship: "primary", dob: "1980-05-04" },
+      ],
+      saved_prescriptions: [{ rxcui: "617310" }],
+    },
+    "en",
+  ) as any;
+  assertEquals(b.client.prescriptions, [{ rx_norm_identifier: "617310", applicant_index: 1 }]);
 });

@@ -58,6 +58,48 @@ export const verifiedPrescriptions = (rx: unknown): PrescriptionRef[] => {
   return [...out.values()];
 };
 
+export type ClientPrescription = PrescriptionRef & {
+  applicant_index: number;
+  duration?: number;
+};
+
+/** Reads a nonnegative integer days-supply, if the saved row actually has one. */
+const savedDuration = (raw: Record<string, unknown>): number | undefined => {
+  const candidate = raw.duration ?? raw.days_supply ?? raw.daysSupply;
+  if (candidate === null || candidate === undefined || candidate === "") return undefined;
+  const n = Number(candidate);
+  return Number.isFinite(n) && Number.isInteger(n) && n >= 0 ? n : undefined;
+};
+
+/**
+ * Live contract (observed 2026-08-05, request id 6654bbdb-88b5-4080-9cb3-976fa92eb1d2):
+ * prescriptions belong on the top-level `client.prescriptions` array as
+ * `[{ id, duration, applicant_index, rx_norm_identifier }]`, not on applicants.
+ * `duration` is emitted only when the saved row carries a real days-supply value.
+ */
+export const clientPrescriptions = (rx: unknown, applicantIndex: number): ClientPrescription[] => {
+  const refs = verifiedPrescriptions(rx);
+  const durations = new Map<string, number>();
+  if (Array.isArray(rx)) {
+    for (const item of rx) {
+      const raw = (item ?? {}) as Record<string, unknown>;
+      const d = savedDuration(raw);
+      if (d === undefined) continue;
+      for (const key of [raw.hs_id, raw.medication_id, raw.rxcui, raw.rxnorm_id, raw.rx_norm_identifier, raw.id]) {
+        const k = String(key ?? "").trim();
+        if (k && !durations.has(k)) durations.set(k, d);
+      }
+    }
+  }
+  return refs.map((ref) => {
+    const key = "id" in ref ? ref.id : ref.rx_norm_identifier;
+    const duration = durations.get(key);
+    return { ...ref, applicant_index: applicantIndex, ...(duration !== undefined ? { duration } : {}) };
+  });
+};
+
+
+
 
 const RELATIONSHIPS = new Set(["primary", "spouse", "dependent"]);
 
@@ -79,7 +121,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
   // does not accept an effective_date property.
   const effectiveDate: string = row.effective_date ?? `${new Date().getFullYear() + 1}-01-01`;
   const planYear = Number(effectiveDate.slice(0, 4));
-  const prescriptions = verifiedPrescriptions(row.saved_prescriptions);
+  // Prescriptions live on the top-level `client` block in the live contract.
   const providers = verifiedNpis(row.saved_doctors);
 
   const relationships = members.map((m, i) => normalizeRelationship(m?.relationship, i));
@@ -88,6 +130,8 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
     throw new Error("exactly_one_primary_required");
   }
   const primaryIndex = Math.max(0, relationships.indexOf("primary"));
+  const prescriptions = clientPrescriptions(row.saved_prescriptions, primaryIndex);
+
 
   const applicants = members.map((member, index) => {
     const isPrimary = index === primaryIndex;
@@ -110,8 +154,8 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
             ...(contact.phone ? { phone_number: digits(contact.phone) } : {}),
           }
         : {}),
-      ...(isPrimary && prescriptions.length > 0 ? { prescriptions } : {}),
     };
+
   });
 
   if (agentNote && agentNote.length > AGENT_NOTE_MAX) {
@@ -139,6 +183,8 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
       household_size: Math.max(Number(row.household_size ?? applicants.length), applicants.length),
       applicants,
     },
+    ...(prescriptions.length > 0 ? { client: { prescriptions } } : {}),
+
     ...(providers.length > 0 ? { providers } : {}),
     ...(agentNote ? { notes: agentNote } : {}),
   };
