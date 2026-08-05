@@ -1,8 +1,8 @@
 import { assert, assertEquals, assertThrows } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import {
   AGENT_NOTE_MAX,
+  applicantPrescriptions,
   buildHandoffBody,
-  topLevelPrescriptions,
   normalizeRelationship,
   verifiedPrescriptions,
 } from "./hs-body.ts";
@@ -22,6 +22,17 @@ const row = {
   contact: { firstName: "Ada", lastName: "Ln", email: "a@example.com", phone: "(305) 555-0142" },
   saved_doctors: [{ id: "1234567893" }, { id: "manual-1", name: "Dr Unverified" }],
   saved_prescriptions: [{ id: "hs_9911", name: "Atorvastatin" }, { name: "Manual drug", manual: true }, { id: "" }],
+};
+
+/** Regression guard for the three rejected experimental placements. */
+const assertNoExperimentalPlacement = (b: any) => {
+  assert(!("prescriptions" in b), "no top-level prescriptions array");
+  assert(!("client" in b), "no client block / client.prescriptions");
+  for (const applicant of b.household.applicants) {
+    for (const rx of applicant.prescriptions ?? []) {
+      assert(!("applicant_index" in rx), "no applicant_index on prescription objects");
+    }
+  }
 };
 
 Deno.test("agent-assisted contract", () => {
@@ -48,11 +59,10 @@ Deno.test("agent-assisted contract", () => {
   assertEquals(p.date_of_birth, "1980-05-04");
   assertEquals(p.first_name, "Ada");
   assertEquals(p.phone_number, "3055550142");
-  assert(!("client" in b), "no top-level client block");
-  assertEquals(b.prescriptions, [{ id: "hs_9911", applicant_index: 0 }]);
-  assert(!("prescriptions" in p), "no applicant-nested prescriptions");
-  assert(!("prescriptions" in spouse), "no applicant-nested prescriptions");
+  assertEquals(p.prescriptions, [{ id: "hs_9911" }]);
+  assert(!("prescriptions" in spouse), "prescriptions nest only on the primary applicant");
   assert(!("first_name" in spouse));
+  assertNoExperimentalPlacement(b);
 
   assertEquals(b.providers, ["1234567893"]);
 });
@@ -128,11 +138,10 @@ Deno.test("agent notes over the contract maximum are rejected, never truncated",
 Deno.test("omits empty optional blocks", () => {
   const b = buildHandoffBody({ ...row, saved_doctors: [], saved_prescriptions: [{ manual: true, name: "x" }] }, "en") as any;
   assert(!("providers" in b));
-  assert(!("client" in b));
-  assert(!("prescriptions" in b.household.applicants[0]));
-  assert(!("prescriptions" in b), "omitted entirely when empty");
+  assert(!("prescriptions" in b.household.applicants[0]), "applicant key omitted when empty");
   assert(!("notes" in b));
   assertEquals(b.context.locale, "en-US");
+  assertNoExperimentalPlacement(b);
 });
 
 /* --- Integration shapes: exactly what FindPrescriptions / ComparePlans persist --- */
@@ -143,11 +152,11 @@ Deno.test("FindPrescriptions saved shape keeps RxNorm provenance", () => {
   assertEquals(verifiedPrescriptions(saved), [{ rx_norm_identifier: "617314" }]);
 
   const b = buildHandoffBody({ ...row, saved_prescriptions: saved }, "en") as any;
-  assertEquals(b.prescriptions, [{ rx_norm_identifier: "617314", applicant_index: 0 }]);
-  assert(!("client" in b));
-  assert(!("prescriptions" in b.household.applicants[0]));
-  assert(!("id" in b.prescriptions[0]), "no fabricated catalog id");
-  assert(!("duration" in b.prescriptions[0]), "no fabricated duration");
+  const rx = b.household.applicants[0].prescriptions;
+  assertEquals(rx, [{ rx_norm_identifier: "617314" }]);
+  assert(!("id" in rx[0]), "no fabricated catalog id");
+  assert(!("duration" in rx[0]), "no fabricated duration");
+  assertNoExperimentalPlacement(b);
 });
 
 Deno.test("ComparePlans saved shape keeps RxNorm provenance", () => {
@@ -177,40 +186,26 @@ Deno.test("a corrected replacement note permits handoff body construction", () =
   assertEquals(b.notes, "Verified income documents on file.");
 });
 
-/* --- Live top-level prescription contract (three 2026-08-05 observations) --- */
-
-Deno.test("top-level prescriptions carry applicant_index", () => {
-  const b = buildHandoffBody(
-    { ...row, saved_prescriptions: [{ id: "617310", id_type: "rxnorm", rxcui: "617310", name: "Atorvastatin" }] },
-    "en",
-  ) as any;
-  assertEquals(b.prescriptions, [{ rx_norm_identifier: "617310", applicant_index: 0 }]);
-  assert(!("client" in b), "client.prescriptions is rejected by the live validator");
-  assert(!("prescriptions" in b.household.applicants[0]), "applicant nesting is rejected");
-  assert(!("prescriptions" in b.household.applicants[1]));
-});
+/* --- Documented /v1 nested prescription shape --- */
 
 Deno.test("catalog ids stay in id and RxNorm CUIs never leak into id", () => {
-  const out = topLevelPrescriptions([{ hs_id: "hs_9911" }, { rxcui: "617310" }], 0);
-  assertEquals(out, [
-    { id: "hs_9911", applicant_index: 0 },
-    { rx_norm_identifier: "617310", applicant_index: 0 },
+  assertEquals(applicantPrescriptions([{ hs_id: "hs_9911" }, { rxcui: "617310" }]), [
+    { id: "hs_9911" },
+    { rx_norm_identifier: "617310" },
   ]);
 });
 
-Deno.test("duration is emitted only for a valid nonnegative days supply", () => {
-  assertEquals(topLevelPrescriptions([{ rxcui: "617310", days_supply: 30 }], 0), [
-    { rx_norm_identifier: "617310", applicant_index: 0, duration: 30 },
+Deno.test("duration is emitted only for a valid nonnegative integer", () => {
+  assertEquals(applicantPrescriptions([{ rxcui: "617310", days_supply: 30 }]), [
+    { rx_norm_identifier: "617310", duration: 30 },
   ]);
-  assertEquals(topLevelPrescriptions([{ rxcui: "617310", days_supply: -5 }], 0), [
-    { rx_norm_identifier: "617310", applicant_index: 0 },
+  assertEquals(applicantPrescriptions([{ rxcui: "617310", days_supply: -5 }]), [
+    { rx_norm_identifier: "617310" },
   ]);
-  assertEquals(topLevelPrescriptions([{ rxcui: "617310" }], 0), [
-    { rx_norm_identifier: "617310", applicant_index: 0 },
-  ]);
+  assertEquals(applicantPrescriptions([{ rxcui: "617310" }]), [{ rx_norm_identifier: "617310" }]);
 });
 
-Deno.test("applicant_index follows the primary applicant position", () => {
+Deno.test("prescriptions follow the primary applicant position", () => {
   const b = buildHandoffBody(
     {
       ...row,
@@ -222,8 +217,7 @@ Deno.test("applicant_index follows the primary applicant position", () => {
     },
     "en",
   ) as any;
-  assertEquals(b.prescriptions, [{ rx_norm_identifier: "617310", applicant_index: 1 }]);
   assert(!("prescriptions" in b.household.applicants[0]));
-  assert(!("prescriptions" in b.household.applicants[1]));
-  assert(!("client" in b));
+  assertEquals(b.household.applicants[1].prescriptions, [{ rx_norm_identifier: "617310" }]);
+  assertNoExperimentalPlacement(b);
 });
