@@ -1,5 +1,7 @@
 /** Pure request-shaping helpers for the HealthSherpa agent-assisted contract. */
 
+
+type SessionRow = Record<string, any>;
 export const LOCALES: Record<string, string> = { en: "en-US", es: "es-MX" };
 
 const digits = (value: unknown): string => String(value ?? "").replace(/\D/g, "");
