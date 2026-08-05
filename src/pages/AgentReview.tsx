@@ -427,21 +427,43 @@ const AgentReview = () => {
                   <h2 className="text-sm font-bold text-slate-900">Internal note</h2>
                   <Textarea
                     value={note}
+                    maxLength={AGENT_NOTE_MAX}
                     onChange={event => setNote(event.target.value)}
                     placeholder="Notes stay internal and are attached to the audit history."
                     className="mt-2 text-sm"
                     rows={3}
                   />
+                  <p className={`mt-1 text-[11px] ${note.trim().length > AGENT_NOTE_MAX ? "text-red-600" : "text-slate-400"}`}>
+                    {note.trim().length}/{AGENT_NOTE_MAX} characters
+                  </p>
                   <Button
                     size="sm"
                     className="mt-2"
-                    disabled={busy || note.trim().length === 0}
-                    onClick={() => void run("Note saved.", () => addAgentNote(selected.id, note.trim())).then(() => setNote(""))}
+                    disabled={busy || note.trim().length === 0 || note.trim().length > AGENT_NOTE_MAX}
+                    onClick={() => {
+                      const value = note.trim();
+                      if (value.length > AGENT_NOTE_MAX) {
+                        toast.error(`Notes must be ${AGENT_NOTE_MAX} characters or fewer.`);
+                        return;
+                      }
+                      void run("Note saved.", () => addAgentNote(selected.id, value)).then(() => setNote(""));
+                    }}
                   >
                     Save note
                   </Button>
-                  {selected.agentNote && <p className="mt-3 text-xs text-slate-500">Latest: {selected.agentNote}</p>}
+                  {selected.agentNote && (
+                    <p className="mt-3 text-xs text-slate-500">
+                      Latest: {selected.agentNote}
+                      {selected.agentNote.length > AGENT_NOTE_MAX && (
+                        <span className="mt-1 block font-semibold text-red-600">
+                          This stored note is {selected.agentNote.length} characters and blocks the HealthSherpa handoff.
+                          Replace it with a note of {AGENT_NOTE_MAX} characters or fewer.
+                        </span>
+                      )}
+                    </p>
+                  )}
                 </div>
+
 
                 <div className="rounded-xl border border-slate-200 bg-white p-5">
                   <h2 className="text-sm font-bold text-slate-900">Return to consumer</h2>
