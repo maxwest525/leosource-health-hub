@@ -125,7 +125,7 @@ export const buildHandoffBody = (row: SessionRow, locale: string, agentNote?: st
   // does not accept an effective_date property.
   const effectiveDate: string = row.effective_date ?? `${new Date().getFullYear() + 1}-01-01`;
   const planYear = Number(effectiveDate.slice(0, 4));
-  // Prescriptions live on the top-level `client` block in the live contract.
+  // Prescriptions nest on the primary applicant (see applicantPrescriptions).
   const providers = verifiedNpis(row.saved_doctors);
 
   const relationships = members.map((m, i) => normalizeRelationship(m?.relationship, i));
