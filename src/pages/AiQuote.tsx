@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowUp, ShieldCheck, RotateCcw, User, History } from "lucide-react";
-import leoMascot from "@/assets/leo-lion-head.png";
+import trudyAvatar from "@/assets/truenroll/trudy.png";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { PromptInputBox } from "@/components/ui/ai-prompt-box";
@@ -57,9 +57,9 @@ const formatTime = (value: number) =>
 const SenderAvatar = ({ kind }: { kind: "user" | "assistant" }) =>
   kind === "assistant" ? (
     <img
-      src={leoMascot}
+      src={trudyAvatar}
       alt="Trudy"
-      className="h-5 w-5 shrink-0 rounded-full object-contain"
+      className="h-5 w-5 shrink-0 rounded-full object-cover"
       loading="lazy"
     />
   ) : (
