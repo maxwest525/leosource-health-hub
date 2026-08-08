@@ -4,7 +4,7 @@ export type ZipPlace = {
   state: string;
 };
 
-const RECENTS_KEY = "leosource.recent-zips";
+const RECENTS_KEY = "truenroll.recent-zips";
 const MAX_RECENTS = 6;
 
 /** Digits only, formatted as 12345 or 12345-6789. */

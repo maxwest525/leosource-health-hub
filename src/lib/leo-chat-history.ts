@@ -12,8 +12,8 @@ export type ChatHistoryEntry = {
   messageCount: number;
 };
 
-export const SESSION_KEY = "leosource-ai-quote-session";
-const HISTORY_KEY = "leosource-ai-quote-history";
+export const SESSION_KEY = "truenroll-ai-quote-session";
+const HISTORY_KEY = "truenroll-ai-quote-history";
 const MAX_ENTRIES = 20;
 
 export const createSessionId = () =>

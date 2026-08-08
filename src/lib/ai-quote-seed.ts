@@ -4,7 +4,7 @@
  * on mount so the conversation starts mid-flight instead of at the greeting.
  */
 
-const SEED_KEY = "leosource.aiquote.seed";
+const SEED_KEY = "truenroll.aiquote.seed";
 
 const isBrowser = (): boolean => typeof window !== "undefined";
 
