@@ -1,6 +1,6 @@
 # TruEnroll
 
-Create me a website for my insurance agency, LeoSource insurance agency LLC 
+Create me a website for my insurance agency, TruEnroll Insurance Agency LLC 
 We specialize in health insurance helping one family at a time we offer ACA, short term medical, limited medical, dental cover, ancillary productus
 
 This project was built with [Lovable](https://lovable.dev).

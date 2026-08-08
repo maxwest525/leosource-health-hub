@@ -5,7 +5,7 @@ export type SavedIncome = {
   period: IncomePeriod;
 };
 
-const STORAGE_KEY = "leosource:compare-income";
+const STORAGE_KEY = "truenroll:compare-income";
 
 /** Reads the last income value the user set in the plan comparison wizard. */
 export function readSavedIncome(): SavedIncome | null {

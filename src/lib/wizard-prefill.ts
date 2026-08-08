@@ -13,7 +13,7 @@ export type WizardPrefill = {
   tobacco: boolean[];
 };
 
-const STORAGE_KEY = "leosource.wizard.prefill";
+const STORAGE_KEY = "truenroll.wizard.prefill";
 
 const isBrowser = (): boolean => typeof window !== "undefined";
 
