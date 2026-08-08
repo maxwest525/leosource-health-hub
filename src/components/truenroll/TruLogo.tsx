@@ -1,5 +1,12 @@
 /** TruEnroll wordmark: bare gradient shield glyph plus the two-tone name. */
-export const TruLogo = ({ size = 30 }: { size?: number }) => (
+export const TruLogo = ({
+  size = 30,
+  tone = "dark",
+}: {
+  size?: number;
+  /** `dark` = navy text for light backgrounds, `light` = white text for dark backgrounds. */
+  tone?: "dark" | "light";
+}) => (
   <span className="flex items-center gap-2">
     <svg
       width={size}
@@ -27,8 +34,11 @@ export const TruLogo = ({ size = 30 }: { size?: number }) => (
         strokeLinejoin="round"
       />
     </svg>
-    <span className="text-[21px] font-bold tracking-tight text-[#0F2B46]">
-      Tru<span className="text-[#1877D2]">Enroll</span>
+    <span
+      className="text-[21px] font-bold tracking-tight"
+      style={{ color: tone === "light" ? "#FFFFFF" : "#0F2B46" }}
+    >
+      Tru<span style={{ color: tone === "light" ? "#7FD2FF" : "#1877D2" }}>Enroll</span>
     </span>
   </span>
 );
