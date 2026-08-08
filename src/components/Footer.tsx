@@ -1,6 +1,6 @@
 import { Phone, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo.png";
+import { TruLogo } from "@/components/truenroll/TruLogo";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -16,7 +16,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-3">
-              <img src={logo} alt="TruEnroll" className="h-8 w-auto" />
+              <TruLogo tone="light" size={26} />
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed mb-4">
               A licensed health insurance agency helping individuals, families, and Medicare consumers find coverage they can understand.

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, Phone, ChevronDown, ChevronRight } from "lucide-react";
-import logo from "@/assets/logo-light.png";
+import { TruLogo } from "@/components/truenroll/TruLogo";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -128,7 +128,7 @@ const Header = () => {
             <div className="flex items-center justify-between h-16 gap-4">
               {/* Logo */}
               <Link to="/" className="flex items-center gap-2 group shrink-0">
-                <img src={logo} alt="TruEnroll" className="h-9 w-auto transition-transform duration-300 group-hover:scale-105" />
+                <span className="transition-transform duration-300 group-hover:scale-105"><TruLogo tone="light" /></span>
               </Link>
 
               {/* Desktop Nav */}
